@@ -38,9 +38,9 @@ const zhTW = {
   },
   notes: {
     title: '筆記', placeholder: '在這裡寫練習重點、提醒…（會自動儲存）', hasText: '有筆記', stickies: '{{count}} 張便利貼',
-    addSticky: '加便利貼', placingCancel: '取消放置', placingHint: '在圖片上點一下要放便利貼的位置（按 Esc 取消）。便利貼可以拖曳 ⠿ 移動。',
-    colorLabel: '便利貼顏色', sizeLabel: '便利貼字級', color: { yellow: '黃', red: '紅', blue: '藍', green: '綠' }, size: { s: '小', m: '中', l: '大' },
-    stickyPlaceholder: '輸入文字', deleteSticky: '刪除便利貼', move: '拖曳移動',
+    addSticky: '加便利貼', placingCancel: '取消放置', placingHint: '在圖片上點一下要放便利貼的位置（按 Esc 取消）。便利貼可以直接拖曳移動，點一下就能編輯。',
+    colorLabel: '便利貼顏色', sizeLabel: '便利貼字級', color: { yellow: '黃', red: '紅', blue: '藍', green: '綠', white: '白' }, size: { s: '小', m: '中', l: '大' },
+    stickyPlaceholder: '輸入文字', deleteSticky: '刪除便利貼', editSticky: '點一下編輯，拖曳可移動', move: '拖曳移動',
     showIn: '顯示在：', place: { pdf: '匯出 PDF', songbook: '歌本', search: '搜尋' },
     defaultsHint: '預設值可以在「設定 → 圖片譜筆記」修改；這裡勾選的只套用到這份譜。',
     settingsTitle: '圖片譜筆記', settingsHint: '圖片譜的筆記和便利貼，預設要出現在哪裡。每份譜也可以在自己的「筆記」裡另外勾選。',

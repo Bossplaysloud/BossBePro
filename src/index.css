@@ -723,7 +723,12 @@ dialog.modal.wide { width: min(760px, calc(100vw - 32px)); }
 .sticky-red { background: #ffc9c9; }
 .sticky-blue { background: #c5e2ff; }
 .sticky-green { background: #c8f1cc; }
+.sticky-white { background: #ffffff; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18), 0 1px 4px rgba(0, 0, 0, 0.2); }
+/* Printing (export PDF) keeps the sticky and note colors instead of dropping backgrounds. */
+.sticky, .sticky-dot, .notes-block { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .sticky.editing { width: 12em; padding: 0; }
+.sticky.idle { cursor: grab; touch-action: none; user-select: none; }
+.sticky.idle:hover, .sticky.idle:focus-visible { box-shadow: 0 0 0 2px var(--accent), 0 1px 4px rgba(0, 0, 0, 0.25); }
 .sticky.editing textarea { display: block; width: 100%; border: 0; background: transparent; color: inherit; font: inherit; line-height: inherit; padding: 0 0.5em 0.3em; resize: none; overflow: hidden; outline: none; }
 .sticky-bar { display: flex; align-items: center; gap: 2px; padding: 2px 4px 0; font-size: 12px; }
 .sticky-grip { cursor: grab; touch-action: none; user-select: none; padding: 0 4px; color: #555; font-size: 14px; }
@@ -873,7 +878,9 @@ dialog.modal { border: 0; border-radius: 28px; background: var(--bg); box-shadow
 /* A blurred acoustic guitar leaning in the corner, behind the title and buttons */
 .dash-guitar { position: absolute; right: 5%; bottom: 3%; height: 59%; width: auto; z-index: -1; pointer-events: none; user-select: none; transform: rotate(-32deg); filter: blur(5px); opacity: 0.7; }
 :root[data-theme='dark'] .dash-guitar { opacity: 0.4; }
-.dash-recent { grid-area: recent; }
+.dash-recent { grid-area: recent; container-type: inline-size; }
+/* In a narrow panel the title keeps the room; the type still shows as the dot's color. */
+@container (max-width: 360px) { .dash-row-type { display: none; } }
 .dash-groups { grid-area: groups; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 26px; }
 .dash-display { font-family: var(--display); font-weight: 200; font-size: clamp(2.4rem, 5vw, 3.4rem); letter-spacing: 0.06em; line-height: 1; margin: 0; }
 .dash-sub { margin: 10px 0 0; color: var(--text-muted); line-height: 1.7; }

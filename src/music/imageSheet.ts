@@ -6,7 +6,7 @@ export interface ImageSheetPage {
   name: string
 }
 
-export const STICKY_COLORS = ['yellow', 'red', 'blue', 'green'] as const
+export const STICKY_COLORS = ['yellow', 'red', 'blue', 'green', 'white'] as const
 export type StickyColor = (typeof STICKY_COLORS)[number]
 export const STICKY_SIZES = ['s', 'm', 'l'] as const
 export type StickySize = (typeof STICKY_SIZES)[number]

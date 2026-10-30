@@ -42,9 +42,9 @@ const en: Shape<typeof zhTW> = {
   },
   notes: {
     title: 'Notes', placeholder: 'Practice points, reminders… (saved automatically)', hasText: 'Has notes', stickies: '{{count}} stickies',
-    addSticky: 'Add sticky', placingCancel: 'Cancel', placingHint: 'Click a spot on a picture to put the sticky there (Esc cancels). Drag ⠿ to move a sticky.',
-    colorLabel: 'Sticky color', sizeLabel: 'Sticky text size', color: { yellow: 'Yellow', red: 'Red', blue: 'Blue', green: 'Green' }, size: { s: 'S', m: 'M', l: 'L' },
-    stickyPlaceholder: 'Type here', deleteSticky: 'Delete sticky', move: 'Drag to move',
+    addSticky: 'Add sticky', placingCancel: 'Cancel', placingHint: 'Click a spot on a picture to put the sticky there (Esc cancels). Drag a sticky to move it; tap it to edit.',
+    colorLabel: 'Sticky color', sizeLabel: 'Sticky text size', color: { yellow: 'Yellow', red: 'Red', blue: 'Blue', green: 'Green', white: 'White' }, size: { s: 'S', m: 'M', l: 'L' },
+    stickyPlaceholder: 'Type here', deleteSticky: 'Delete sticky', editSticky: 'Tap to edit, drag to move', move: 'Drag to move',
     showIn: 'Show in:', place: { pdf: 'PDF export', songbook: 'Songbooks', search: 'Search' },
     defaultsHint: 'Defaults are in Settings → Picture sheet notes; these boxes apply to this sheet only.',
     settingsTitle: 'Picture sheet notes', settingsHint: 'Where the notes and stickies of picture sheets show by default. Each sheet can choose otherwise in its Notes.',

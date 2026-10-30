@@ -24,15 +24,20 @@ export interface StickyEditor {
 
 const clamp = (v: number) => Math.min(0.97, Math.max(0, v))
 
-/** A sticky on a page: plain text to read, or (with `edit`) a small note to type in, drag, recolor and resize. */
+/**
+ * A sticky on a page: plain text to read, or (with `edit`) a note that fits its text until tapped,
+ * then opens as a box to type in, recolor and resize. It can be dragged either way.
+ */
 export function StickyNote({ sticky, edit }: { sticky: Sticky; edit?: StickyEditor }) {
   const { t } = useTranslation()
   const ref = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLTextAreaElement>(null)
   const [text, setText] = useState(sticky.text)
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
-  const drag = useRef<{ dx: number; dy: number } | null>(null)
+  const drag = useRef<{ dx: number; dy: number; x: number; y: number; moved: boolean } | null>(null)
   const typing = useRef(false)
+  // Being edited: a new (empty) sticky starts open, others open when tapped.
+  const [active, setActive] = useState(!sticky.text)
 
   // Someone else changed the text (another tab, undo of a restore): follow it unless typing.
   useEffect(() => {
@@ -52,7 +57,7 @@ export function StickyNote({ sticky, edit }: { sticky: Sticky; edit?: StickyEdit
     if (!el) return
     el.style.height = 'auto'
     el.style.height = `${el.scrollHeight}px`
-  }, [text, sticky.size])
+  }, [text, sticky.size, active])
 
   const style = { left: `${(pos ?? sticky).x * 100}%`, top: `${(pos ?? sticky).y * 100}%` } as CSSProperties
   const cls = `sticky sticky-${sticky.color} sticky-${sticky.size}`
@@ -67,17 +72,42 @@ export function StickyNote({ sticky, edit }: { sticky: Sticky; edit?: StickyEdit
     } catch {
       /* not a live pointer */
     }
-    drag.current = { dx: e.clientX - box.left, dy: e.clientY - box.top }
+    drag.current = { dx: e.clientX - box.left, dy: e.clientY - box.top, x: e.clientX, y: e.clientY, moved: false }
   }
   const moveDrag = (e: PointerEvent<HTMLElement>) => {
     const page = ref.current?.parentElement?.getBoundingClientRect()
     if (!drag.current || !page) return
+    // A few pixels of wobble is still a tap, not a drag.
+    if (!drag.current.moved && Math.hypot(e.clientX - drag.current.x, e.clientY - drag.current.y) < 4) return
+    drag.current.moved = true
     setPos({ x: clamp((e.clientX - drag.current.dx - page.left) / page.width), y: clamp((e.clientY - drag.current.dy - page.top) / page.height) })
   }
   const endDrag = () => {
+    const tapped = drag.current && !drag.current.moved
     drag.current = null
     if (pos) edit.onChange(sticky.id, pos)
     setPos(null)
+    return tapped
+  }
+
+  if (!active) {
+    return (
+      <div
+        ref={ref}
+        className={`${cls} idle`}
+        style={style}
+        role="button"
+        tabIndex={0}
+        title={t('notes.editSticky')}
+        onPointerDown={startDrag}
+        onPointerMove={moveDrag}
+        onPointerUp={() => endDrag() && setActive(true)}
+        onPointerCancel={endDrag}
+        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), setActive(true))}
+      >
+        {sticky.text}
+      </div>
+    )
   }
 
   return (
@@ -88,6 +118,7 @@ export function StickyNote({ sticky, edit }: { sticky: Sticky; edit?: StickyEdit
       onBlur={(e) => {
         if (ref.current?.contains(e.relatedTarget as Node)) return
         typing.current = false
+        setActive(false)
         if (!text.trim()) edit.onDelete(sticky.id)
         else if (text !== sticky.text) edit.onChange(sticky.id, { text })
       }}
@@ -109,7 +140,7 @@ export function StickyNote({ sticky, edit }: { sticky: Sticky; edit?: StickyEdit
         rows={1}
         value={text}
         placeholder={t('notes.stickyPlaceholder')}
-        autoFocus={!sticky.text}
+        autoFocus
         onChange={(e) => {
           typing.current = true
           setText(e.target.value)
