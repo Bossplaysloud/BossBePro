@@ -91,6 +91,8 @@ export function ScoreView({ tex, visible, profile = 'tab', range, onMeasureClick
   // a right page, one spread after another (see `arrangePages`).
   const [twoPage] = useTwoPage()
   const wrapRef = useRef<HTMLDivElement>(null)
+  // Height of the last finished layout: kept while a new one is drawn, so the page does not collapse.
+  const lastHeight = useRef(0)
   const [wrapWidth, setWrapWidth] = useState(0)
   const pageWidth = twoPage && wrapWidth ? Math.max(240, Math.floor((wrapWidth - PAGE_GAP) / 2)) : null
   const pages = useRef<number | null>(null)
@@ -172,6 +174,7 @@ export function ScoreView({ tex, visible, profile = 'tab', range, onMeasureClick
         }
         setRendered(true)
         arrangePages(hostRef.current, pages.current)
+        lastHeight.current = wrapRef.current?.offsetHeight ?? 0
         measureBoxes()
       })
       api.playerReady.on(() => emit({ ready: true }))
@@ -230,7 +233,12 @@ export function ScoreView({ tex, visible, profile = 'tab', range, onMeasureClick
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
-    const measure = () => setWrapWidth(Math.round(el.getBoundingClientRect().width))
+    // Small changes (a scroll bar appearing while the score grows, then going) do not lay the
+    // two pages out again: that made the score jump back and forth.
+    const measure = () => {
+      const w = Math.round(el.getBoundingClientRect().width)
+      setWrapWidth((prev) => (!prev || Math.abs(w - prev) > 24 ? w : prev))
+    }
     measure()
     const ro = new ResizeObserver(measure)
     ro.observe(el)
@@ -263,13 +271,19 @@ export function ScoreView({ tex, visible, profile = 'tab', range, onMeasureClick
   return (
     <div className={`score-view${visible ? '' : ' offscreen'}${pageWidth ? ' two-page' : ''}`} aria-hidden={!visible}>
       {visible && <ZoomSelect />}
-      <div ref={wrapRef} style={{ position: 'relative' }}>
-        <div ref={hostRef} onClick={onClick} style={pageWidth ? { width: pageWidth } : undefined} />
+      <div ref={wrapRef} style={{ position: 'relative', minHeight: rendered ? undefined : lastHeight.current || undefined }}>
+        {/* Two pages are dealt out only once the whole score is drawn: hide it until then. */}
+        <div ref={hostRef} onClick={onClick} style={pageWidth ? { width: pageWidth, visibility: rendered ? undefined : 'hidden' } : undefined} />
         {!pageWidth && boxes.map((b, i) => (
           <div key={i} className="score-range" style={{ left: b.x, top: b.y, width: b.w, height: b.h }} />
         ))}
       </div>
-      {visible && !rendered && <div className="score-status">{t('tab.rendering')}</div>}
+      {visible && !rendered && (
+        <div className={`score-status${pageWidth ? ' busy' : ''}`} role="status">
+          {pageWidth && <span className="spinner" aria-hidden />}
+          {pageWidth ? t('view.arrangingTwoPage') : t('tab.rendering')}
+        </div>
+      )}
     </div>
   )
 }

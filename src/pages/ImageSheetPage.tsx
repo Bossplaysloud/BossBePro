@@ -1,18 +1,20 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import type { Section, Sheet } from '../db/db'
-import { addImagePages, deleteSheet, moveImagePage, removeImagePage, updateSheet } from '../db/repo'
+import { newId, type Section, type Sheet } from '../db/db'
+import { addImagePages, deleteSheet, moveImagePage, removeImagePage, updateImageNotes, updateSheet } from '../db/repo'
 import { AddToSongbookDialog } from '../components/AddToSongbookDialog'
 import { Icon } from '../components/Icon'
+import { ImageNotesPanel, type StickyEditor } from '../components/ImageNotes'
 import { ImageSheetView } from '../components/ImageSheetView'
 import { ConfirmModal } from '../components/Modal'
-import { isImageSheetContent } from '../music/imageSheet'
+import { imageNotes, isImageSheetContent, type ImageNotes, type StickyColor, type StickySize } from '../music/imageSheet'
 import { pickSheetFiles } from '../lib/pickFiles'
 
 /**
  * A picture / PDF sheet: the files are the sheet, shown for reading. Files can be added, removed
- * and reordered; to edit the music it has to be turned into notation by recognition first.
+ * and reordered, notes written and stickies put on the pages; to edit the music it has to be
+ * turned into notation by recognition first.
  */
 export function ImageSheetPage({ sheet, sections }: { sheet: Sheet; sections: Section[] }) {
   const { t } = useTranslation()
@@ -23,6 +25,22 @@ export function ImageSheetPage({ sheet, sections }: { sheet: Sheet; sections: Se
   const [tagsDraft, setTagsDraft] = useState<string | null>(null)
   const pages = isImageSheetContent(sheet.content) ? sheet.content.pages : []
   const save = (changes: Parameters<typeof updateSheet>[1]) => void updateSheet(sheet.id, changes)
+  const notes = imageNotes(sheet.content)
+  const [placing, setPlacing] = useState(false)
+  const [stickyStyle, setStickyStyle] = useState<{ color: StickyColor; size: StickySize }>({ color: 'yellow', size: 'm' })
+  const changeNotes = useCallback((change: Partial<ImageNotes>) => void updateImageNotes(sheet.id, (n) => ({ ...n, ...change })), [sheet.id])
+  const edit = useMemo<StickyEditor>(
+    () => ({
+      placing,
+      onPlace: (assetId, page, x, y) => {
+        setPlacing(false)
+        void updateImageNotes(sheet.id, (n) => ({ ...n, stickies: [...n.stickies, { id: newId(), assetId, page, x: Math.min(0.97, x), y: Math.min(0.97, y), text: '', ...stickyStyle }] }))
+      },
+      onChange: (id, change) => void updateImageNotes(sheet.id, (n) => ({ ...n, stickies: n.stickies.map((x) => (x.id === id ? { ...x, ...change } : x)) })),
+      onDelete: (id) => void updateImageNotes(sheet.id, (n) => ({ ...n, stickies: n.stickies.filter((x) => x.id !== id) })),
+    }),
+    [placing, sheet.id, stickyStyle],
+  )
 
   return (
     <div className="page">
@@ -86,6 +104,7 @@ export function ImageSheetPage({ sheet, sections }: { sheet: Sheet; sections: Se
             {t('imageSheet.addFiles')}
           </button>
         </div>
+        <ImageNotesPanel notes={notes} onChange={changeNotes} placing={placing} onPlacing={setPlacing} style={stickyStyle} onStyle={(change) => setStickyStyle((st) => ({ ...st, ...change }))} />
         <label className="choice">
           <input type="checkbox" checked={wantEdit} onChange={(e) => setWantEdit(e.target.checked)} />
           <span style={{ flex: 1 }}>
@@ -105,7 +124,7 @@ export function ImageSheetPage({ sheet, sections }: { sheet: Sheet; sections: Se
         )}
       </section>
 
-      <ImageSheetView pages={pages} onRemove={(assetId) => void removeImagePage(sheet.id, assetId)} onMove={(assetId, dir) => void moveImagePage(sheet.id, assetId, dir)} />
+      <ImageSheetView pages={pages} stickies={notes.stickies} edit={edit} onRemove={(assetId) => void removeImagePage(sheet.id, assetId)} onMove={(assetId, dir) => void moveImagePage(sheet.id, assetId, dir)} />
 
       <AddToSongbookDialog open={toSongbook} onClose={() => setToSongbook(false)} sheetId={sheet.id} />
       <ConfirmModal

@@ -1,9 +1,15 @@
 const zhTW = {
   app: { name: 'BePro', tagline: '弦樂器練習譜本' },
-  nav: { library: '譜本', settings: '設定', allSheets: '全部的譜', unsorted: '未分類', sections: '分類', songbooks: '歌本', menu: '選單' },
+  nav: { home: '首頁', library: '譜本', settings: '設定', allSheets: '全部的譜', unsorted: '未分類', sections: '分類', songbooks: '歌本', menu: '選單' },
   common: {
     cancel: '取消', save: '儲存', delete: '刪除', rename: '重新命名', create: '建立', close: '關閉', confirm: '確定',
     search: '搜尋', back: '返回', edit: '編輯', untitled: '未命名',
+  },
+  manage: {
+    manage: '管理', done: '完成', selectAll: '全選', deleteSelected: '刪除所選（{{count}}）', hint: '勾選要刪除的分類或歌本',
+    deleteTitle: '刪除 {{count}} 個項目', deleteWhat: '要刪除 {{names}}。',
+    withSheetsQuestion: '這些分類裡共有 {{count}} 份譜，要一起刪除嗎？', withSheetsHint: '選「否」：譜會保留，移到「未分類」。選「是」：譜會永久刪除，也會從歌本移除，無法復原。',
+    withSheetsYes: '是，連譜一起刪除', withSheetsNo: '否，只刪分類', songbookHint: '刪除歌本不會刪除裡面的譜。',
   },
   pdf: {
     export: '匯出 PDF 檔', exportTitle: '匯出 PDF 檔（A4）', preparing: '正在排版…',
@@ -25,10 +31,26 @@ const zhTW = {
   imageSheet: {
     newHint: '這種譜就是圖片或 PDF 本身，只能看、不能編輯，也不會辨識。可以一次選多個檔案。',
     chooseFiles: '選擇圖片／PDF', noFiles: '還沒選檔案', files: '{{count}} 個檔案',
-    readOnly: '圖片／PDF 譜：只能閱讀，共 {{count}} 個檔案。', addFiles: '加入圖片／PDF', removeFile: '移除這個檔案',
+    readOnly: '圖片／PDF 譜：共 {{count}} 個檔案。譜的內容不能編輯，但可以寫筆記、貼便利貼。', addFiles: '加入圖片／PDF', removeFile: '移除這個檔案',
     wantEdit: '我要編輯這份譜', wantEditHint: '勾選後可前往辨識區：把這些圖片／PDF 辨識成一份新的可編輯譜（原本這份會保留）。',
     toRecognize: '前往辨識', empty: '還沒有圖片或 PDF', emptyHint: '按「加入圖片／PDF」放入檔案。',
     missing: '找不到這個檔案', cannotOpen: '無法開啟「{{name}}」',
+  },
+  notes: {
+    title: '筆記', placeholder: '在這裡寫練習重點、提醒…（會自動儲存）', hasText: '有筆記', stickies: '{{count}} 張便利貼',
+    addSticky: '加便利貼', placingCancel: '取消放置', placingHint: '在圖片上點一下要放便利貼的位置（按 Esc 取消）。便利貼可以拖曳 ⠿ 移動。',
+    colorLabel: '便利貼顏色', sizeLabel: '便利貼字級', color: { yellow: '黃', red: '紅', blue: '藍', green: '綠' }, size: { s: '小', m: '中', l: '大' },
+    stickyPlaceholder: '輸入文字', deleteSticky: '刪除便利貼', move: '拖曳移動',
+    showIn: '顯示在：', place: { pdf: '匯出 PDF', songbook: '歌本', search: '搜尋' },
+    defaultsHint: '預設值可以在「設定 → 圖片譜筆記」修改；這裡勾選的只套用到這份譜。',
+    settingsTitle: '圖片譜筆記', settingsHint: '圖片譜的筆記和便利貼，預設要出現在哪裡。每份譜也可以在自己的「筆記」裡另外勾選。',
+    settingPlace: { pdf: '匯出 PDF 時一起印出', songbook: '在歌本閱讀模式中顯示', search: '搜尋時也比對筆記和便利貼的文字' },
+  },
+  dash: {
+    summary: '{{sheets}} 份譜 · {{sections}} 個分類 · {{songbooks}} 本歌本', recent: '最近的譜', viewAll: '查看全部 {{count}} 份 →',
+    unsorted: '未分類 {{count}} 份 →', sheets: '{{count}} 份譜', showAll: '顯示全部（{{count}}）', showLess: '收起',
+    noSheets: '還沒有譜。可以從上面匯入 GP 譜、匯入圖片，或新增一份譜。', noSections: '還沒有分類，可以在左側欄新增。', noSongbooks: '還沒有歌本，可以在左側欄新增。',
+    sponsor: '贊助', search: '搜尋譜', today: '今天', sheetsLabel: '份譜', tagline: '匯入、辨識、整理你的譜',
   },
   multiSelect: {
     start: '選取', done: '完成', count: '已選 {{count}} 份', all: '全選', none: '取消選取',
@@ -128,8 +150,11 @@ const zhTW = {
     capoPanel: 'Capo {{capo}}：{{chord}} 的指法，實際聽到 {{sound}}', convertedCapo: '已轉換，並從內容中找到 Capo {{capo}}',
   },
   ai: {
-    title: '從圖片辨識', fromImage: '從圖片辨識', using: '使用 {{provider}} · {{model}}',
+    title: '匯入圖片／辨識', fromImage: '匯入圖片／辨識', using: '使用 {{provider}} · {{model}}',
     provider: { anthropic: 'Claude', openai: 'OpenAI', gemini: 'Gemini' },
+    noKeyImport: '沒有設定 API 金鑰也能用：選好圖片、裁切後，按「存成圖片譜」，就會變成一份可以看、寫筆記、貼便利貼的圖片譜。設定金鑰後，還能把圖片辨識成可編輯的譜。',
+    saveImages: '存成圖片譜（{{count}} 張）', saveImagesHint: '不辨識，把裁切好的圖片直接存成一份圖片譜',
+    saveImagesTitle: '存成圖片譜', saveImagesNote: '圖片會照你裁切、旋轉後的樣子存起來。之後可以在譜裡寫筆記、貼便利貼。', imagesSaved: '已存成圖片譜',
     noKey: '還沒有設定 AI 服務的 API 金鑰。設定後就能把譜的照片、截圖或 PDF 變成可編輯的譜；沒有金鑰也可以手動輸入。',
     goSettings: '前往設定', expected: '譜的類型', auto: '自動判斷', stringsHint: '弦數',
     chooseFile: '選擇圖片或 PDF', takePhoto: '拍照', pasteHint: '也可以直接貼上（⌘V / Ctrl+V）截圖。',
@@ -138,6 +163,12 @@ const zhTW = {
     cropHint: '拖曳方框只框選要辨識的段落，範圍越小越準。', rotate: '旋轉', fullImage: '整張', otherImage: '換一張',
     recognize: '開始辨識', running: '辨識中…（{{seconds}} 秒）', runningHint: '複雜的譜可能需要一分鐘以上。',
     notMusic: '圖片裡看不到樂譜',
+    quota: {
+      perMinute: '這一分鐘的免費請求次數用完了，等一分鐘再按繼續即可。',
+      perDay: '今天的免費額度用完了，明天會自動恢復；急用的話可到設定改選其他模型（每個模型的額度分開計算）。',
+      noFreeQuota: '這個模型沒有免費額度，請到設定改選 Flash-Lite 或 Flash 模型，或為帳號開通付費。',
+      noCredit: '帳號的付費額度（餘額）用完了，請到 AI 服務網站儲值或改用其他服務。',
+    },
     error: {
       auth: 'API 金鑰無效或沒有權限，請到設定檢查。', rate: '請求太頻繁或額度不足，請稍後再試。', busy: 'AI 服務暫時忙碌（伺服器過載），請稍等一下再按繼續。', network: '無法連線到 AI 服務，請檢查網路。',
       refused: 'AI 服務拒絕處理這張圖片。', tooLong: '內容太長，請框選小一點的範圍分次辨識。', badOutput: 'AI 回傳的格式無法解讀，請再試一次。',
@@ -165,6 +196,7 @@ const zhTW = {
     unreadable: '有 {{count}} 個音無法解讀，已略過', reviewHint: '建立後會在譜旁邊顯示原圖，方便對照修正。',
     addMore: '再加入圖片或 PDF', pagesAdded: '已加入 {{count}} 頁', addPage: '加入這一頁', addAllPages: '加入全部 {{count}} 頁', done: '完成',
     editImage: '旋轉／框選', moveUp: '往前移', moveDown: '往後移', imageN: '第 {{n}} 張',
+    orderHintPlain: '點縮圖可以旋轉、裁切；存成圖片譜時會照這個順序排列。',
     orderHint: '依照順序辨識，結果會接成同一份譜。點縮圖可以旋轉、框選。',
     recognizeN: '開始辨識（{{count}} 張）', resume: '從第 {{n}} 張繼續辨識', progress: '第 {{n}} / {{total}} 張',
     failedAt: '第 {{n}} / {{total}} 張：', imageWarning: '第 {{n}} 張：{{text}}',
@@ -176,6 +208,18 @@ const zhTW = {
     show: '顯示', hide: '隱藏', clearKey: '清除金鑰', keyCleared: '已清除金鑰', pasteKey: '貼上 API 金鑰', replaceKey: '貼上新的金鑰以取代',
     model: '模型', modelHint: '按「測試連線」載入你的帳號可用的模型。', noModel: '尚未選擇', test: '測試連線', testing: '測試中…',
     testOk: '連線成功，找到 {{count}} 個模型',
+    keyDetected: '這是 {{provider}} 的金鑰，已自動切換到 {{provider}}。',
+    modelReplaced: '原本選的模型 {{from}} 這把金鑰不能用，已改選 {{to}}。',
+    testKeyOk: '金鑰有效（找到 {{count}} 個可讀圖片的模型）', testKeyFail: '金鑰無法使用：{{message}}',
+    testModelOk: '「{{model}}」實際試用成功：可以讀圖片、目前有額度', testModelFail: '「{{model}}」實際試用失敗：{{message}}',
+    testNote: '測試會用選定的模型送出一張極小的圖片，只用掉一點點額度。',
+    guideTitle: '怎麼取得 API 金鑰？',
+    guideFree: '還沒有金鑰的話，建議用 Gemini：有免費額度，用 Google 帳號就能申請。',
+    guide: {
+      gemini: ['打開 Google AI Studio（下方「取得金鑰」連結），用 Google 帳號登入。', '按「Create API key」（建立 API 金鑰），選一個專案或讓它自動建立。', '複製產生的金鑰（AIza 開頭），貼到上面的欄位按「儲存」。', '按「測試連線」確認可以使用。'],
+      anthropic: ['打開 Anthropic Console（下方「取得金鑰」連結），註冊並登入。', '到 Billing 儲值（Claude 沒有免費額度）。', '到 API Keys 按「Create Key」，複製金鑰（sk-ant- 開頭），貼到上面按「儲存」。', '按「測試連線」確認可以使用。'],
+      openai: ['打開 OpenAI Platform（下方「取得金鑰」連結），註冊並登入。', '到 Billing 儲值（API 沒有免費額度）。', '到 API keys 按「Create new secret key」，複製金鑰（sk- 開頭），貼到上面按「儲存」。', '按「測試連線」確認可以使用。'],
+    },
     keyWarning: '金鑰只存在這台裝置的瀏覽器中，不會上傳到 BePro，也不會包含在備份裡；只會傳給你選的 AI 服務。若這台裝置與他人共用，用完請清除金鑰。',
   },
   gp: {
@@ -250,7 +294,7 @@ const zhTW = {
   tuning: { save: '儲存為我的 tuning', saveTitle: '儲存 tuning', namePlaceholder: '例如：Drop C', mine: '我的 tuning', saved: '已儲存 tuning' },
   sheetType: { tab: 'TAB 譜', staff: '五線譜', chord: '和弦譜', numbered: '數字簡譜', image: '圖片／PDF' },
   instrument: { guitar: '吉他', bass: '貝斯', ukulele: '烏克麗麗', custom: '自訂' },
-  view: { twoPage: '雙頁', twoPageHint: '像翻開的書：左頁看完接右頁（看譜用；雙頁時播放游標與範圍標示不顯示）', zoom: '譜的顯示大小', list: '列表', grid: '卡片', allTags: '全部標籤' },
+  view: { arrangingTwoPage: '正在排成雙頁，長的譜需要幾秒…', twoPage: '雙頁', twoPageHint: '像翻開的書：左頁看完接右頁（看譜用；雙頁時播放游標與範圍標示不顯示）', zoom: '譜的顯示大小', list: '列表', grid: '卡片', allTags: '全部標籤' },
   settings: {
     about: '關於',
     credits: 'BePro 的譜面繪製與播放使用 alphaTab（MPL-2.0），音樂符號字型 Bravura（SIL OFL），內建音色 SONiVOX EAS。',

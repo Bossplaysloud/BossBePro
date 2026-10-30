@@ -2,7 +2,7 @@ import { db, newId, type Section, type Sheet, type SheetType, type Songbook } fr
 import { DEFAULT_FRETS, defaultTuning, sheetFrets, type InstrumentId } from '../music/instruments'
 import { contentKind, convertContent, kindOf } from '../music/convert'
 import { flushPendingSaves } from '../lib/pendingSaves'
-import { isImageSheetContent, isPdf, type ImageSheetContent, type ImageSheetPage } from '../music/imageSheet'
+import { EMPTY_NOTES, isImageSheetContent, isPdf, type ImageNotes, type ImageSheetContent, type ImageSheetPage } from '../music/imageSheet'
 
 export async function createSection(name: string): Promise<string> {
   const last = await db.sections.orderBy('order').last()
@@ -17,7 +17,9 @@ export async function renameSection(id: string, name: string) {
 }
 
 /** Deleting a section keeps its sheets: they move to "Unsorted". */
-export async function deleteSection(id: string) {
+/** Deletes a section; its sheets move to unsorted, or with `withSheets` are deleted too. */
+export async function deleteSection(id: string, withSheets = false) {
+  if (withSheets) for (const sheet of await db.sheets.where('sectionId').equals(id).toArray()) await deleteSheet(sheet.id)
   await db.transaction('rw', db.sections, db.sheets, async () => {
     const now = Date.now()
     await db.sheets.where('sectionId').equals(id).modify({ sectionId: null, updatedAt: now })
@@ -125,7 +127,17 @@ export async function removeImagePage(id: string, assetId: string) {
     const sheet = await db.sheets.get(id)
     if (!sheet || !isImageSheetContent(sheet.content)) return
     await db.assets.delete(assetId)
-    await db.sheets.update(id, { content: { ...sheet.content, pages: sheet.content.pages.filter((p) => p.assetId !== assetId) }, updatedAt: Date.now() })
+    const notes = sheet.content.notes && { ...sheet.content.notes, stickies: sheet.content.notes.stickies.filter((s) => s.assetId !== assetId) }
+    await db.sheets.update(id, { content: { ...sheet.content, pages: sheet.content.pages.filter((p) => p.assetId !== assetId), ...(notes && { notes }) }, updatedAt: Date.now() })
+  })
+}
+
+/** Changes the notes of a picture / PDF sheet (text, stickies, where they show). */
+export async function updateImageNotes(id: string, change: (notes: ImageNotes) => ImageNotes) {
+  await db.transaction('rw', db.sheets, async () => {
+    const sheet = await db.sheets.get(id)
+    if (!sheet || !isImageSheetContent(sheet.content)) return
+    await db.sheets.update(id, { content: { ...sheet.content, notes: change(sheet.content.notes ?? EMPTY_NOTES) }, updatedAt: Date.now() })
   })
 }
 

@@ -1,12 +1,24 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { db, type Section, type Songbook } from '../db/db'
 import { createSection, createSongbook, reorder } from '../db/repo'
+import { DeleteGroupsDialog } from './DeleteGroupsDialog'
 import { Icon } from './Icon'
 import { PromptModal } from './Modal'
 import { SortableList, useSortableItem } from './Sortable'
+
+/** In manage mode an item is a checkbox row: no link, no dragging. */
+function CheckItem({ name, count, checked, onToggle }: { name: string; count: number; checked: boolean; onToggle: () => void }) {
+  return (
+    <label className={`nav-item manage-item${checked ? ' checked' : ''}`}>
+      <input type="checkbox" checked={checked} onChange={onToggle} />
+      <span className="name">{name}</span>
+      <span className="count">{count}</span>
+    </label>
+  )
+}
 
 function SectionItem({ section, count, onNavigate }: { section: Section; count: number; onNavigate: () => void }) {
   const { t } = useTranslation()
@@ -48,17 +60,37 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
   const songbooks = useLiveQuery(() => db.songbooks.orderBy('order').toArray(), []) ?? []
   const [creating, setCreating] = useState(false)
   const [creatingBook, setCreatingBook] = useState(false)
+  const [managing, setManaging] = useState(false)
+  const [picked, setPicked] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const toggle = (id: string) =>
+    setPicked((p) => {
+      const next = new Set(p)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  const stopManaging = () => {
+    setManaging(false)
+    setPicked(new Set())
+  }
+  const pickedSections = sections.filter((s) => picked.has(s.id))
+  const pickedBooks = songbooks.filter((b) => picked.has(b.id))
 
   const countIn = (id: string | null) => sheets.filter((s) => s.sectionId === id).length
 
   return (
     <nav className={`sidebar${open ? ' open' : ''}`} aria-label={t('nav.menu')}>
-      <div className="brand">
+      <Link to="/" className="brand" onClick={onNavigate} aria-label={t('nav.home')}>
         <img src="./favicon.svg" alt="" />
         {t('app.name')}
-      </div>
+      </Link>
 
       <NavLink to="/" end className="nav-item" onClick={onNavigate}>
+        <Icon name="home" />
+        <span className="name">{t('nav.home')}</span>
+      </NavLink>
+      <NavLink to="/all" className="nav-item" onClick={onNavigate}>
         <Icon name="library" />
         <span className="name">{t('nav.allSheets')}</span>
         <span className="count">{sheets.length}</span>
@@ -69,32 +101,60 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
         <span className="count">{countIn(null)}</span>
       </NavLink>
 
-      <div className="nav-label">{t('nav.sections')}</div>
-      <SortableList ids={sections.map((s) => s.id)} onReorder={(ids) => void reorder('sections', ids)}>
-        {sections.map((s) => (
-          <SectionItem
-            key={s.id}
-            section={s}
-            count={countIn(s.id)}
-            onNavigate={onNavigate}
-          />
-        ))}
-      </SortableList>
-      <button className="nav-item muted" onClick={() => setCreating(true)}>
-        <Icon name="plus" />
-        {t('section.new')}
-      </button>
+      <div className="nav-label nav-label-row">
+        <span>{t('nav.sections')}</span>
+        {(sections.length > 0 || songbooks.length > 0) && (
+          <button className="link-btn" onClick={() => (managing ? stopManaging() : setManaging(true))}>{managing ? t('manage.done') : t('manage.manage')}</button>
+        )}
+      </div>
+      {managing ? (
+        sections.map((s) => <CheckItem key={s.id} name={s.name} count={countIn(s.id)} checked={picked.has(s.id)} onToggle={() => toggle(s.id)} />)
+      ) : (
+        <SortableList ids={sections.map((s) => s.id)} onReorder={(ids) => void reorder('sections', ids)}>
+          {sections.map((s) => (
+            <SectionItem
+              key={s.id}
+              section={s}
+              count={countIn(s.id)}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </SortableList>
+      )}
+      {!managing && (
+        <button className="nav-item muted" onClick={() => setCreating(true)}>
+          <Icon name="plus" />
+          {t('section.new')}
+        </button>
+      )}
 
       <div className="nav-label">{t('nav.songbooks')}</div>
-      <SortableList ids={songbooks.map((b) => b.id)} onReorder={(ids) => void reorder('songbooks', ids)}>
-        {songbooks.map((b) => (
-          <SongbookItem key={b.id} book={b} onNavigate={onNavigate} />
-        ))}
-      </SortableList>
-      <button className="nav-item muted" onClick={() => setCreatingBook(true)}>
-        <Icon name="book" />
-        {t('songbook.new')}
-      </button>
+      {managing ? (
+        songbooks.map((b) => <CheckItem key={b.id} name={b.name} count={b.entries.length} checked={picked.has(b.id)} onToggle={() => toggle(b.id)} />)
+      ) : (
+        <SortableList ids={songbooks.map((b) => b.id)} onReorder={(ids) => void reorder('songbooks', ids)}>
+          {songbooks.map((b) => (
+            <SongbookItem key={b.id} book={b} onNavigate={onNavigate} />
+          ))}
+        </SortableList>
+      )}
+      {!managing && (
+        <button className="nav-item muted" onClick={() => setCreatingBook(true)}>
+          <Icon name="book" />
+          {t('songbook.new')}
+        </button>
+      )}
+
+      {/* Manage mode: tick sections and songbooks, then delete them together. */}
+      {managing && (
+        <div className="manage-bar">
+          <span className="muted small">{t('manage.hint')}</span>
+          <div className="row">
+            <button className="btn" onClick={() => setPicked(picked.size === sections.length + songbooks.length ? new Set() : new Set([...sections, ...songbooks].map((x) => x.id)))}>{t('manage.selectAll')}</button>
+            <button className="btn btn-danger" disabled={!picked.size} onClick={() => setDeleting(true)}>{t('manage.deleteSelected', { count: picked.size })}</button>
+          </div>
+        </div>
+      )}
 
       <div className="sidebar-footer">
         <NavLink to="/settings" className="nav-item" onClick={onNavigate}>
@@ -103,6 +163,19 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
         </NavLink>
       </div>
 
+      <DeleteGroupsDialog
+        open={deleting}
+        sections={pickedSections}
+        songbooks={pickedBooks}
+        sheetCount={sheets.filter((x) => x.sectionId && picked.has(x.sectionId)).length}
+        onClose={() => setDeleting(false)}
+        onDone={() => {
+          // Leave a page whose section or songbook no longer exists.
+          const gone = [...picked].some((id) => location.hash.includes(id))
+          stopManaging()
+          if (gone) navigate('/')
+        }}
+      />
       <PromptModal
         open={creating}
         title={t('section.new')}

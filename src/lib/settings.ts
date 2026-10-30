@@ -189,3 +189,16 @@ export function useSourcePanel(): [SourcePanelMode, (m: SourcePanelMode) => void
   const mode: SourcePanelMode = raw === 'hidden' || raw === 'top' ? raw : 'side'
   return [mode, (m) => write('bepro.sourcePanel', m)]
 }
+
+/** Where picture-sheet notes show by default; each sheet can choose otherwise. All on by default. */
+export type NotesPlace = 'pdf' | 'songbook' | 'search'
+export function useNotesDefault(place: NotesPlace): [boolean, (on: boolean) => void] {
+  const on = useKey(`bepro.notes.${place}`) !== '0'
+  return [on, (v) => write(`bepro.notes.${place}`, v ? '1' : '0')]
+}
+
+/** Whether a picture sheet's notes panel is open; remembers the last choice. */
+export function useNotesOpen(): [boolean, (open: boolean) => void] {
+  const open = useKey('bepro.notesOpen') === '1'
+  return [open, (o) => write('bepro.notesOpen', o ? '1' : '0')]
+}

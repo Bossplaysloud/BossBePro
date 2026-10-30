@@ -1,15 +1,16 @@
 import { useLiveQuery } from 'dexie-react-hooks'
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useContext, useEffect, useState, type CSSProperties } from 'react'
 import { useTranslation } from 'react-i18next'
 import { db } from '../db/db'
 import { openPdf, renderPdfPage } from '../lib/image'
-import type { ImageSheetPage } from '../music/imageSheet'
+import { imageNotes, isImageSheetContent, type ImageSheetPage, type Sticky } from '../music/imageSheet'
 import { Icon } from './Icon'
+import { NotesBlock, StickyNote, useNotesShown, type StickyEditor } from './ImageNotes'
 import { ZoomSelect } from './ZoomSelect'
-import { useScoreZoom, useTwoPage } from '../lib/settings'
+import { PrintLayout, useScoreZoom, useTwoPage } from '../lib/settings'
 
-/** One stored picture, or every page of one stored PDF, drawn at full width. */
-function PageFile({ page }: { page: ImageSheetPage }) {
+/** One stored picture, or every page of one stored PDF, drawn at full width, with its stickies. */
+function PageFile({ page, stickies, edit }: { page: ImageSheetPage; stickies: Sticky[]; edit?: StickyEditor }) {
   const { t } = useTranslation()
   const asset = useLiveQuery(() => db.assets.get(page.assetId), [page.assetId])
   const [urls, setUrls] = useState<string[] | null>(null)
@@ -48,18 +49,32 @@ function PageFile({ page }: { page: ImageSheetPage }) {
   return (
     <>
       {(urls ?? []).map((u, i) => (
-        <img key={u} className="image-sheet-page" src={u} alt={`${page.name} ${i + 1}`} draggable={false} />
+        <div
+          key={u}
+          className={`image-sheet-page${edit?.placing ? ' placing' : ''}`}
+          onClick={(e) => {
+            if (!edit?.placing || e.target !== e.currentTarget.firstChild) return
+            const r = e.currentTarget.getBoundingClientRect()
+            edit.onPlace(page.assetId, i, (e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height)
+          }}
+        >
+          <img className="image-sheet-img" src={u} alt={`${page.name} ${i + 1}`} draggable={false} />
+          {stickies.filter((s) => s.page === i).map((s) => (
+            <StickyNote key={s.id} sticky={s} edit={edit} />
+          ))}
+        </div>
       ))}
     </>
   )
 }
 
 /**
- * The pages of a picture / PDF sheet, top to bottom; with `onRemove` / `onMove` each file can be managed.
+ * The pages of a picture / PDF sheet, top to bottom; with `onRemove` / `onMove` each file can be managed,
+ * with `stickies` the notes stuck on the pages show (and with `edit` can be placed, moved and changed).
  * The display size scales each page; in two-page mode the pages (pictures, or PDF pages) sit two
  * side by side, left page then right page.
  */
-export function ImageSheetView({ pages, onRemove, onMove, zoomable = true }: { pages: ImageSheetPage[]; onRemove?: (assetId: string) => void; onMove?: (assetId: string, dir: -1 | 1) => void; zoomable?: boolean }) {
+export function ImageSheetView({ pages, onRemove, onMove, zoomable = true, stickies = [], edit }: { pages: ImageSheetPage[]; onRemove?: (assetId: string) => void; onMove?: (assetId: string, dir: -1 | 1) => void; zoomable?: boolean; stickies?: Sticky[]; edit?: StickyEditor }) {
   const { t } = useTranslation()
   const [zoom] = useScoreZoom()
   const [twoPage] = useTwoPage()
@@ -85,10 +100,24 @@ export function ImageSheetView({ pages, onRemove, onMove, zoomable = true }: { p
               )}
             </figcaption>
           )}
-          <PageFile page={p} />
+          <PageFile page={p} stickies={stickies.filter((s) => s.assetId === p.assetId)} edit={edit} />
         </figure>
       ))}
     </div>
+    </>
+  )
+}
+
+/** A picture / PDF sheet read-only (songbook, PDF): its notes and stickies where the settings allow. */
+export function ImageSheetRead({ content }: { content: unknown }) {
+  const print = useContext(PrintLayout)
+  const notes = imageNotes(content)
+  const shown = useNotesShown(notes, print ? 'pdf' : 'songbook')
+  const pages = isImageSheetContent(content) ? content.pages : []
+  return (
+    <>
+      {shown && <NotesBlock text={notes.text} />}
+      <ImageSheetView pages={pages} zoomable={false} stickies={shown ? notes.stickies : []} />
     </>
   )
 }

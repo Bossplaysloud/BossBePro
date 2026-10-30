@@ -9,7 +9,8 @@ import { ConfirmModal, Modal, PromptModal } from '../components/Modal'
 import { SortableList, useSortableItem } from '../components/Sortable'
 import { TypeBadge } from '../components/TypeBadge'
 import { tuningLabel } from '../music/instruments'
-import { isImageSheetContent } from '../music/imageSheet'
+import { isImageSheetContent, notesMatch } from '../music/imageSheet'
+import { useNotesDefault } from '../lib/settings'
 
 /** One song in the book: its position, the sheet, and a button to take it out (the sheet stays). */
 function EntryCard({ entry, index, sheet, bookId, onRemove }: { entry: SongbookEntry; index: number; sheet: Sheet; bookId: string; onRemove: () => void }) {
@@ -60,10 +61,11 @@ function AddSheetsDialog({ open, onClose, onAdd, counts }: { open: boolean; onCl
   const sheets = useLiveQuery(() => db.sheets.orderBy('order').toArray(), []) ?? []
   const sections = useLiveQuery(() => db.sections.toArray(), []) ?? []
   const [query, setQuery] = useState('')
+  const [searchNotes] = useNotesDefault('search')
   const [picked, setPicked] = useState<string[]>([])
   const names = new Map(sections.map((s) => [s.id, s.name]))
   const q = query.trim().toLowerCase()
-  const shown = sheets.filter((s) => !q || s.title.toLowerCase().includes(q) || s.tags.some((x) => x.toLowerCase().includes(q)))
+  const shown = sheets.filter((s) => !q || s.title.toLowerCase().includes(q) || s.tags.some((x) => x.toLowerCase().includes(q)) || notesMatch(s.content, q, searchNotes))
   const close = () => {
     setPicked([])
     setQuery('')

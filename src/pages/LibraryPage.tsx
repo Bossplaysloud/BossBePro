@@ -1,16 +1,18 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db/db'
-import { deleteSection, deleteSheet, renameSection, reorder } from '../db/repo'
+import { deleteSheet, renameSection, reorder } from '../db/repo'
+import { DeleteGroupsDialog } from '../components/DeleteGroupsDialog'
 import { Icon } from '../components/Icon'
 import { ConfirmModal, PromptModal } from '../components/Modal'
 import { NewSheetDialog } from '../components/NewSheetDialog'
 import { SheetCard } from '../components/SheetCard'
 import { SortableList } from '../components/Sortable'
 import { pickScoreFile } from '../lib/pickFiles'
-import { useViewMode } from '../lib/settings'
+import { useNotesDefault, useViewMode } from '../lib/settings'
+import { notesMatch } from '../music/imageSheet'
 import { GP_EXTENSIONS } from '../music/gpImport'
 
 type Scope = { kind: 'all' } | { kind: 'unsorted' } | { kind: 'section'; id: string }
@@ -23,7 +25,10 @@ export function LibraryPage({ scope: fixed }: { scope?: Scope }) {
 
   const sections = useLiveQuery(() => db.sections.orderBy('order').toArray(), [])
   const allSheets = useLiveQuery(() => db.sheets.orderBy('order').toArray(), [])
-  const [query, setQuery] = useState('')
+  const location = useLocation()
+  // The home page's search box opens all sheets with its words already in the search field.
+  const [query, setQuery] = useState<string>(() => (location.state as { query?: string } | null)?.query ?? '')
+  const [searchNotes] = useNotesDefault('search')
   const [tag, setTag] = useState('')
   const [view, setView] = useViewMode()
   const [creating, setCreating] = useState(false)
@@ -52,9 +57,9 @@ export function LibraryPage({ scope: fixed }: { scope?: Scope }) {
     return inScope.filter(
       (s) =>
         (!tag || s.tags.includes(tag)) &&
-        (!q || s.title.toLowerCase().includes(q) || s.tags.some((x) => x.toLowerCase().includes(q))),
+        (!q || s.title.toLowerCase().includes(q) || s.tags.some((x) => x.toLowerCase().includes(q)) || notesMatch(s.content, q, searchNotes)),
     )
-  }, [inScope, query, tag])
+  }, [inScope, query, tag, searchNotes])
 
   if (!sections || !allSheets) return null
   if (scope.kind === 'section' && !section) return <Navigate to="/" replace />
@@ -192,18 +197,13 @@ export function LibraryPage({ scope: fixed }: { scope?: Scope }) {
           setRenaming(false)
         }}
       />
-      <ConfirmModal
+      {/* Asks whether the section's sheets go too ("No", the default, moves them to unsorted). */}
+      <DeleteGroupsDialog
         open={deleting}
-        danger
-        title={t('section.deleteTitle')}
-        body={t('section.deleteBody', { name: section?.name, count: inScope.length })}
-        confirmLabel={t('common.delete')}
-        cancelLabel={t('common.cancel')}
+        sections={section ? [section] : []}
+        sheetCount={inScope.length}
         onClose={() => setDeleting(false)}
-        onConfirm={() => {
-          setDeleting(false)
-          if (section) void deleteSection(section.id).then(() => navigate('/unsorted'))
-        }}
+        onDone={() => navigate('/unsorted')}
       />
     </div>
   )

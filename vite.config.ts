@@ -39,7 +39,7 @@ export default defineConfig({
       },
       workbox: {
         // CJK font files are large and split by unicode-range: cache them on first use instead of precaching all.
-        globPatterns: ['**/*.{js,css,html,svg,png}', '**/carlito-*.woff2', 'alphatab/font/Bravura.woff2', 'alphatab/soundfont/sonivox.sf2', 'assets/alphaTab.*.mjs'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp}', '**/carlito-*.woff2', '**/lexend-exa-*.woff2', 'alphatab/font/Bravura.woff2', 'alphatab/soundfont/sonivox.sf2', 'assets/alphaTab.*.mjs'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         runtimeCaching: [
           {

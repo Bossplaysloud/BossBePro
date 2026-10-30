@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { exportBackupToFile } from '../db/backup'
 import { db, newId } from '../db/db'
 import { AiSettingsPanel } from '../components/AiSettings'
+import { NotesSettings } from '../components/ImageNotes'
 import { ConfirmModal } from '../components/Modal'
 import { Icon } from '../components/Icon'
 import { useRestore } from '../components/RestoreDialog'
@@ -87,6 +88,8 @@ export function SettingsPage() {
       </section>
 
       <AiSettingsPanel />
+
+      <NotesSettings />
 
       <section className="panel">
         <h2>{t('sound.title')}</h2>

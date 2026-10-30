@@ -5,13 +5,12 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { db, type Sheet } from '../db/db'
 import { ChartPreview } from '../components/ChordChartWorkspace'
 import { Icon } from '../components/Icon'
-import { ImageSheetView } from '../components/ImageSheetView'
+import { ImageSheetRead } from '../components/ImageSheetView'
 import { JianpuView } from '../components/Jianpu'
 import { ScoreView } from '../components/ScoreView'
 import { useTwoPage } from '../lib/settings'
 import { melodyToAlphaTex, tabToAlphaTex, type MelodyTexOptions } from '../music/alphatex'
 import { isChordChartContent } from '../music/chordChart'
-import { isImageSheetContent } from '../music/imageSheet'
 import { sheetProgram } from '../music/instruments'
 import { isMelodyContent, numberedBase } from '../music/melody'
 import { isTabContent } from '../music/tab'
@@ -39,7 +38,7 @@ export function SheetView({ sheet }: { sheet: Sheet }) {
     return null
   }, [sheet, c])
 
-  if (sheet.type === 'image') return <ImageSheetView pages={isImageSheetContent(c) ? c.pages : []} zoomable={false} />
+  if (sheet.type === 'image') return <ImageSheetRead content={c} />
   if (sheet.type === 'chord' && isChordChartContent(c)) {
     const capo = c.capo ?? 0
     return (

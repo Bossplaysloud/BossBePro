@@ -9,7 +9,8 @@ export const PROVIDERS: Provider[] = ['anthropic', 'openai', 'gemini']
 export const DEFAULT_MODELS: Record<Provider, string> = {
   anthropic: 'claude-opus-5-5',
   openai: '',
-  gemini: '',
+  // Free-tier friendly: Flash-Lite has the most free requests per minute and per day.
+  gemini: 'gemini-3.1-flash-lite',
 }
 
 /** Speech, image-generation, embedding and live-audio variants cannot read a sheet image. */
@@ -39,7 +40,8 @@ export function loadAiSettings(): AiSettings {
   } catch {
     /* storage unavailable or corrupt */
   }
-  return { provider: 'anthropic', keys: {}, models: {} }
+  // First use: Gemini (it has a free tier). Settings already saved are kept as they are.
+  return { provider: 'gemini', keys: {}, models: {} }
 }
 
 export function saveAiSettings(s: AiSettings) {
@@ -61,10 +63,37 @@ export function activeAi(s = loadAiSettings()) {
 
 export class AiError extends Error {
   code: 'auth' | 'rate' | 'busy' | 'network' | 'refused' | 'tooLong' | 'badOutput' | 'noModel' | 'noImage' | 'other'
+  /** For quota errors, which limit was hit; only picks a clearer message (handling follows `code`). */
+  quota?: QuotaReason
   constructor(code: AiError['code'], message: string = code) {
     super(message)
     this.code = code
+    if (code === 'rate' || code === 'other') this.quota = quotaReason(message) ?? undefined
   }
+}
+
+/**
+ * Which quota a refusal is about, from the service's message:
+ * - perMinute: too many requests this minute (wait a minute);
+ * - perDay: today's free requests are used up (try tomorrow, or another model);
+ * - noFreeQuota: this model has no free quota at all ("limit: 0"; choose a Flash / Flash-Lite model);
+ * - noCredit: the paid account has no credit left.
+ */
+export type QuotaReason = 'perMinute' | 'perDay' | 'noFreeQuota' | 'noCredit'
+
+export function quotaReason(message: string): QuotaReason | null {
+  if (/insufficient_quota|credit balance is too low|billing|exceeded your current quota.*(plan|billing)/i.test(message) && !/free_?tier/i.test(message)) return 'noCredit'
+  if (!/RESOURCE_EXHAUSTED|quota|rate.?limit|429/i.test(message)) return null
+  if (/limit:\s*0\b/.test(message)) return 'noFreeQuota'
+  if (/PerDay|per day|daily/i.test(message)) return 'perDay'
+  if (/PerMinute|per minute|rate.?limit/i.test(message)) return 'perMinute'
+  return null
+}
+
+/** The message (i18n key) for an error: the specific quota message when known, otherwise by code. */
+export function aiErrorKey(e: unknown): string {
+  if (!(e instanceof AiError)) return 'ai.error.other'
+  return e.quota ? `ai.quota.${e.quota}` : `ai.error.${e.code}`
 }
 
 export interface ImageInput {
@@ -306,6 +335,63 @@ export function listModels(provider: Provider, key: string): Promise<ModelOption
   return geminiModels(key)
 }
 
+/** A 1×1 white PNG: the smallest picture that still checks that the model accepts images. */
+const PROBE_IMAGE = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII='
+
+/**
+ * The settings page's connection test, beyond listing models: one tiny real request to the chosen
+ * model with a picture, so a missing quota, a model that cannot see images, or a model the key
+ * cannot use shows up here instead of in the middle of a recognition. Separate from the requests
+ * recognition makes (which are not changed by it); costs a few tokens. Resolves to null when the
+ * model answered, otherwise to the error.
+ */
+export async function probeModel(provider: Provider, key: string, model: string): Promise<AiError | null> {
+  const prompt = 'Reply with the single word OK.'
+  try {
+    if (provider === 'anthropic') {
+      try {
+        const { client } = await anthropicClient(key)
+        await client.messages.create({
+          model,
+          max_tokens: 16,
+          messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: PROBE_IMAGE } }, { type: 'text', text: prompt }] }],
+        })
+      } catch (e) {
+        throw await anthropicError(e)
+      }
+    } else if (provider === 'openai') {
+      await openaiFetch(key, '/chat/completions', {
+        method: 'POST',
+        body: JSON.stringify({
+          model,
+          max_completion_tokens: 16,
+          messages: [{ role: 'user', content: [{ type: 'text', text: prompt }, { type: 'image_url', image_url: { url: `data:image/png;base64,${PROBE_IMAGE}` } }] }],
+        }),
+      })
+    } else {
+      await geminiFetch(key, `/models/${encodeURIComponent(model)}:generateContent`, {
+        method: 'POST',
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ inline_data: { mime_type: 'image/png', data: PROBE_IMAGE } }, { text: prompt }] }],
+          generationConfig: { maxOutputTokens: 16 },
+        }),
+      })
+    }
+    return null
+  } catch (e) {
+    return e instanceof AiError ? e : new AiError('other', String(e))
+  }
+}
+
+/** Which service a pasted key belongs to, from how it starts (null when it cannot tell). */
+export function providerOfKey(key: string): Provider | null {
+  const k = key.trim()
+  if (/^AIza/.test(k)) return 'gemini'
+  if (/^sk-ant-/.test(k)) return 'anthropic'
+  if (/^sk-/.test(k)) return 'openai'
+  return null
+}
+
 /** A sensible default from a model list when none is chosen yet. */
 export function pickModel(provider: Provider, options: ModelOption[]): string {
   const models = options.map((m) => m.id)
@@ -314,7 +400,8 @@ export function pickModel(provider: Provider, options: ModelOption[]): string {
   const preferred =
     provider === 'openai'
       ? [/^gpt-5(\.\d+)?$/, /^gpt-5/, /^gpt-4\.1$/, /^gpt-4o$/]
-      : [/^gemini-[\d.]+-pro$/, /^gemini-[\d.]+-flash$/, /^gemini-.*pro(-latest)?$/, /^gemini-.*flash(-latest)?$/, /gemini/]
+      : // Gemini: Flash-Lite, then Flash (the free tier gives Pro models little or no quota).
+        [new RegExp(`^${DEFAULT_MODELS.gemini.replace(/\./g, '\\.')}$`), /^gemini-[\d.]+-flash-lite$/, /flash-lite/, /^gemini-[\d.]+-flash$/, /flash/, /^gemini-[\d.]+-pro$/, /gemini/]
   for (const re of preferred) {
     const hit = models.find((m) => re.test(m))
     if (hit) return hit

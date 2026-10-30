@@ -4,10 +4,16 @@ type Shape<T> = { [K in keyof T]: T[K] extends string ? string : Shape<T[K]> }
 
 const en: Shape<typeof zhTW> = {
   app: { name: 'BePro', tagline: 'Practice notebook for string players' },
-  nav: { library: 'Library', settings: 'Settings', allSheets: 'All sheets', unsorted: 'Unsorted', sections: 'Sections', songbooks: 'Songbooks', menu: 'Menu' },
+  nav: { home: 'Home', library: 'Library', settings: 'Settings', allSheets: 'All sheets', unsorted: 'Unsorted', sections: 'Sections', songbooks: 'Songbooks', menu: 'Menu' },
   common: {
     cancel: 'Cancel', save: 'Save', delete: 'Delete', rename: 'Rename', create: 'Create', close: 'Close', confirm: 'OK',
     search: 'Search', back: 'Back', edit: 'Edit', untitled: 'Untitled',
+  },
+  manage: {
+    manage: 'Manage', done: 'Done', selectAll: 'Select all', deleteSelected: 'Delete selected ({{count}})', hint: 'Tick the sections or songbooks to delete',
+    deleteTitle: 'Delete {{count}} items', deleteWhat: 'Delete {{names}}.',
+    withSheetsQuestion: 'These sections hold {{count}} sheets. Delete them too?', withSheetsHint: '"No": the sheets are kept and moved to Unsorted. "Yes": they are deleted for good and taken out of songbooks; this cannot be undone.',
+    withSheetsYes: 'Yes, delete the sheets too', withSheetsNo: 'No, only the sections', songbookHint: 'Deleting a songbook does not delete its sheets.',
   },
   pdf: {
     export: 'Export PDF', exportTitle: 'Export as PDF (A4)', preparing: 'Laying out…',
@@ -29,10 +35,26 @@ const en: Shape<typeof zhTW> = {
   imageSheet: {
     newHint: 'This kind of sheet is the pictures or PDF themselves: for reading only, no editing or recognition. You can pick several files.',
     chooseFiles: 'Choose pictures / PDF', noFiles: 'No files chosen', files: '{{count}} files',
-    readOnly: 'Picture / PDF sheet: read only, {{count}} files.', addFiles: 'Add pictures / PDF', removeFile: 'Remove this file',
+    readOnly: 'Picture / PDF sheet, {{count}} files. The music cannot be edited, but you can write notes and add stickies.', addFiles: 'Add pictures / PDF', removeFile: 'Remove this file',
     wantEdit: 'I want to edit this sheet', wantEditHint: 'Tick to go to recognition: the pictures / PDF become a new editable sheet (this one is kept).',
     toRecognize: 'Go to recognition', empty: 'No pictures or PDF yet', emptyHint: 'Press "Add pictures / PDF" to add files.',
     missing: 'File not found', cannotOpen: 'Cannot open "{{name}}"',
+  },
+  notes: {
+    title: 'Notes', placeholder: 'Practice points, reminders… (saved automatically)', hasText: 'Has notes', stickies: '{{count}} stickies',
+    addSticky: 'Add sticky', placingCancel: 'Cancel', placingHint: 'Click a spot on a picture to put the sticky there (Esc cancels). Drag ⠿ to move a sticky.',
+    colorLabel: 'Sticky color', sizeLabel: 'Sticky text size', color: { yellow: 'Yellow', red: 'Red', blue: 'Blue', green: 'Green' }, size: { s: 'S', m: 'M', l: 'L' },
+    stickyPlaceholder: 'Type here', deleteSticky: 'Delete sticky', move: 'Drag to move',
+    showIn: 'Show in:', place: { pdf: 'PDF export', songbook: 'Songbooks', search: 'Search' },
+    defaultsHint: 'Defaults are in Settings → Picture sheet notes; these boxes apply to this sheet only.',
+    settingsTitle: 'Picture sheet notes', settingsHint: 'Where the notes and stickies of picture sheets show by default. Each sheet can choose otherwise in its Notes.',
+    settingPlace: { pdf: 'Print them in PDF exports', songbook: 'Show them in songbook reading', search: 'Search their text too' },
+  },
+  dash: {
+    summary: '{{sheets}} sheets · {{sections}} sections · {{songbooks}} songbooks', recent: 'Recent sheets', viewAll: 'View all {{count}} →',
+    unsorted: 'Unsorted {{count}} →', sheets: '{{count}} sheets', showAll: 'Show all ({{count}})', showLess: 'Show less',
+    noSheets: 'No sheets yet. Import a GP file or pictures above, or create a sheet.', noSections: 'No sections yet; add one in the sidebar.', noSongbooks: 'No songbooks yet; add one in the sidebar.',
+    sponsor: 'Sponsor', search: 'Search sheets', today: 'Today', sheetsLabel: 'sheets', tagline: 'Import, recognize and organize your sheets',
   },
   multiSelect: {
     start: 'Select', done: 'Done', count: '{{count}} selected', all: 'Select all', none: 'Clear',
@@ -132,8 +154,11 @@ const en: Shape<typeof zhTW> = {
     capoPanel: 'Capo {{capo}}: {{chord}} shape, sounds as {{sound}}', convertedCapo: 'Converted; found Capo {{capo}} in the text',
   },
   ai: {
-    title: 'Recognize from image', fromImage: 'From image', using: 'Using {{provider}} · {{model}}',
+    title: 'Import / recognize image', fromImage: 'Import / recognize image', using: 'Using {{provider}} · {{model}}',
     provider: { anthropic: 'Claude', openai: 'OpenAI', gemini: 'Gemini' },
+    noKeyImport: 'Works without an API key: pick and crop the pictures, then press "Save as picture sheet" to get a sheet you can read, write notes on and add stickies to. With a key you can also recognize the pictures into an editable sheet.',
+    saveImages: 'Save as picture sheet ({{count}})', saveImagesHint: 'Skip recognition and keep the cropped pictures as a picture sheet',
+    saveImagesTitle: 'Save as picture sheet', saveImagesNote: 'The pictures are kept as cropped and rotated. You can add notes and stickies in the sheet later.', imagesSaved: 'Saved as a picture sheet',
     noKey: 'No AI API key is set yet. Add one to turn photos, screenshots and PDFs of sheets into editable sheets; you can always enter music by hand.',
     goSettings: 'Open Settings', expected: 'Sheet type', auto: 'Detect', stringsHint: 'Strings',
     chooseFile: 'Choose image or PDF', takePhoto: 'Take photo', pasteHint: 'You can also paste a screenshot (⌘V / Ctrl+V).',
@@ -142,6 +167,12 @@ const en: Shape<typeof zhTW> = {
     cropHint: 'Drag the box around the part to recognize; smaller is more accurate.', rotate: 'Rotate', fullImage: 'Whole image', otherImage: 'Another image',
     recognize: 'Recognize', running: 'Recognizing… ({{seconds}} s)', runningHint: 'Complex sheets can take a minute or more.',
     notMusic: 'No music found in the image',
+    quota: {
+      perMinute: 'This minute\'s free requests are used up. Wait a minute, then press Continue.',
+      perDay: 'Today\'s free quota is used up; it comes back tomorrow. To go on now, choose another model in Settings (each model has its own quota).',
+      noFreeQuota: 'This model has no free quota. Choose a Flash-Lite or Flash model in Settings, or enable billing on the account.',
+      noCredit: 'The account has no paid credit left. Top it up on the AI service\'s site or use another service.',
+    },
     error: {
       auth: 'The API key is invalid or lacks access. Check Settings.', rate: 'Too many requests or out of credit. Try again later.', busy: 'The AI service is busy (overloaded). Wait a moment and continue.', network: 'Could not reach the AI service. Check your connection.',
       refused: 'The AI service declined this image.', tooLong: 'Too much content: select a smaller area and recognize in parts.', badOutput: 'The AI reply could not be read. Please try again.',
@@ -169,6 +200,7 @@ const en: Shape<typeof zhTW> = {
     unreadable: '{{count}} notes could not be read and were skipped', reviewHint: 'The original is shown next to the sheet so you can check and fix it.',
     addMore: 'Add more images or PDFs', pagesAdded: 'Added {{count}} page(s)', addPage: 'Add this page', addAllPages: 'Add all {{count}} pages', done: 'Done',
     editImage: 'Rotate / crop', moveUp: 'Move earlier', moveDown: 'Move later', imageN: 'Image {{n}}',
+    orderHintPlain: 'Tap a thumbnail to rotate or crop it. The pictures are saved in this order.',
     orderHint: 'Images are recognized in this order and joined into one sheet. Tap a thumbnail to rotate or crop it.',
     recognizeN: 'Recognize ({{count}} images)', resume: 'Continue from image {{n}}', progress: 'Image {{n}} / {{total}}',
     failedAt: 'Image {{n}} / {{total}}: ', imageWarning: 'Image {{n}}: {{text}}',
@@ -180,6 +212,18 @@ const en: Shape<typeof zhTW> = {
     show: 'Show', hide: 'Hide', clearKey: 'Clear key', keyCleared: 'Key cleared', pasteKey: 'Paste API key', replaceKey: 'Paste a new key to replace it',
     model: 'Model', modelHint: 'Press "Test connection" to load the models your account can use.', noModel: 'None selected', test: 'Test connection', testing: 'Testing…',
     testOk: 'Connected; {{count}} models found',
+    keyDetected: 'This is a {{provider}} key; switched to {{provider}}.',
+    modelReplaced: 'The model {{from}} is not available with this key; switched to {{to}}.',
+    testKeyOk: 'Key works ({{count}} models that read images)', testKeyFail: 'Key cannot be used: {{message}}',
+    testModelOk: '"{{model}}" answered a real request: it reads images and has quota now', testModelFail: '"{{model}}" failed a real request: {{message}}',
+    testNote: 'The test sends one tiny picture to the chosen model, using a very small amount of quota.',
+    guideTitle: 'How do I get an API key?',
+    guideFree: 'No key yet? Gemini is the easiest: it has a free tier and only needs a Google account.',
+    guide: {
+      gemini: ['Open Google AI Studio (the "Get a key" link below) and sign in with a Google account.', 'Press "Create API key" and pick a project (or let it create one).', 'Copy the key (it starts with AIza), paste it above and press Save.', 'Press "Test connection" to check it works.'],
+      anthropic: ['Open the Anthropic Console (the "Get a key" link below), sign up and sign in.', 'Add credit under Billing (Claude has no free tier).', 'Under API Keys press "Create Key", copy the key (it starts with sk-ant-), paste it above and press Save.', 'Press "Test connection" to check it works.'],
+      openai: ['Open the OpenAI Platform (the "Get a key" link below), sign up and sign in.', 'Add credit under Billing (the API has no free tier).', 'Under API keys press "Create new secret key", copy the key (it starts with sk-), paste it above and press Save.', 'Press "Test connection" to check it works.'],
+    },
     keyWarning: 'The key is stored only in this browser. It is not uploaded to BePro or included in backups, and is sent only to the AI service you chose. Clear it after use on a shared device.',
   },
   gp: {
@@ -254,7 +298,7 @@ const en: Shape<typeof zhTW> = {
   tuning: { save: 'Save as my tuning', saveTitle: 'Save tuning', namePlaceholder: 'e.g. Drop C', mine: 'My tunings', saved: 'Tuning saved' },
   sheetType: { tab: 'TAB', staff: 'Standard notation', chord: 'Chord chart', numbered: 'Numbered notation', image: 'Picture / PDF' },
   instrument: { guitar: 'Guitar', bass: 'Bass', ukulele: 'Ukulele', custom: 'Custom' },
-  view: { twoPage: 'Two pages', twoPageHint: 'Like an open book: the left page, then the right page (for reading; the playback cursor and range marks are hidden)', zoom: 'Sheet display size', list: 'List', grid: 'Cards', allTags: 'All tags' },
+  view: { arrangingTwoPage: 'Laying out two pages; long scores take a few seconds…', twoPage: 'Two pages', twoPageHint: 'Like an open book: the left page, then the right page (for reading; the playback cursor and range marks are hidden)', zoom: 'Sheet display size', list: 'List', grid: 'Cards', allTags: 'All tags' },
   settings: {
     about: 'About',
     credits: 'BePro draws and plays scores with alphaTab (MPL-2.0), the Bravura music font (SIL OFL) and the SONiVOX EAS sounds.',

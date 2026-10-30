@@ -1,12 +1,23 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AiError, DEFAULT_MODELS, PROVIDERS, listModels, loadAiSettings, pickModel, saveAiSettings, type AiSettings, type ModelOption, type Provider } from '../ai/providers'
+import { AiError, DEFAULT_MODELS, PROVIDERS, aiErrorKey, listModels, loadAiSettings, pickModel, probeModel, providerOfKey, saveAiSettings, type AiSettings, type ModelOption, type Provider } from '../ai/providers'
 import { useToast } from './Toast'
 
 const KEY_PAGES: Record<Provider, string> = {
   anthropic: 'https://console.anthropic.com/settings/keys',
   openai: 'https://platform.openai.com/api-keys',
   gemini: 'https://aistudio.google.com/apikey',
+}
+
+/** What the last connection test found: the key (model list), then one real request to the model. */
+interface TestResult {
+  provider: Provider
+  keyOk: boolean
+  keyMessage?: string
+  count?: number
+  model?: string
+  modelOk?: boolean
+  modelMessage?: string
 }
 
 /** Provider, API key and model for image recognition. Keys stay in this browser only. */
@@ -18,6 +29,7 @@ export function AiSettingsPanel() {
   const [reveal, setReveal] = useState(false)
   const [models, setModels] = useState<ModelOption[]>([])
   const [testing, setTesting] = useState(false)
+  const [result, setResult] = useState<TestResult | null>(null)
   const provider = settings.provider
   const key = settings.keys[provider] ?? ''
   const model = settings.models[provider] || DEFAULT_MODELS[provider]
@@ -31,32 +43,49 @@ export function AiSettingsPanel() {
     update({ ...settings, provider: p })
     setModels([])
     setDraft('')
+    setResult(null)
   }
 
   const saveKey = () => {
     const k = draft.trim()
     if (!k) return
-    update({ ...settings, keys: { ...settings.keys, [provider]: k } })
+    // A key pasted under the wrong service goes to the service it belongs to.
+    const owner = providerOfKey(k)
+    const p = owner && owner !== provider ? owner : provider
+    if (p !== provider) {
+      setModels([])
+      toast(t('ai.keyDetected', { provider: t(`ai.provider.${p}`) }))
+    }
+    update({ ...settings, provider: p, keys: { ...settings.keys, [p]: k } })
     setDraft('')
-    void test(k)
+    void test(k, p)
   }
 
-  const test = async (k = key) => {
+  const test = async (k = key, p = provider) => {
     if (!k) return
     setTesting(true)
+    setResult(null)
     try {
-      const list = await listModels(provider, k)
+      // 1. The key: can it list the models?
+      let list: ModelOption[]
+      try {
+        list = await listModels(p, k)
+      } catch (e) {
+        setResult({ provider: p, keyOk: false, keyMessage: t(aiErrorKey(e)) })
+        return
+      }
       setModels(list)
-      const saved = settings.models[provider]
-      const chosen = saved && list.some((m) => m.id === saved) ? saved : pickModel(provider, list)
+      const saved = loadAiSettings().models[p] || DEFAULT_MODELS[p]
+      const chosen = saved && list.some((m) => m.id === saved) ? saved : pickModel(p, list)
+      if (saved && chosen !== saved && loadAiSettings().models[p]) toast(t('ai.modelReplaced', { from: saved, to: chosen }))
       setSettings((s) => {
-        const next = { ...s, keys: { ...s.keys, [provider]: k }, models: { ...s.models, [provider]: chosen } }
+        const next = { ...s, provider: p, keys: { ...s.keys, [p]: k }, models: { ...s.models, [p]: chosen } }
         saveAiSettings(next)
         return next
       })
-      toast(t('ai.testOk', { count: list.length }))
-    } catch (e) {
-      toast(t(`ai.error.${e instanceof AiError ? e.code : 'other'}`))
+      // 2. The model: one tiny real request with a picture (quota, image input).
+      const err = chosen ? await probeModel(p, k, chosen) : new AiError('noModel')
+      setResult({ provider: p, keyOk: true, count: list.length, model: chosen, modelOk: !err, modelMessage: err ? t(aiErrorKey(err)) : undefined })
     } finally {
       setTesting(false)
     }
@@ -67,10 +96,13 @@ export function AiSettingsPanel() {
     delete keys[provider]
     update({ ...settings, keys })
     setModels([])
+    setResult(null)
     toast(t('ai.keyCleared'))
   }
 
   const masked = key ? `${key.slice(0, 7)}…${key.slice(-4)}` : ''
+  const steps = t(`ai.guide.${provider}`, { returnObjects: true }) as unknown as string[]
+  const shown = result?.provider === provider ? result : null
 
   return (
     <section className="panel">
@@ -87,6 +119,15 @@ export function AiSettingsPanel() {
           ))}
         </div>
       </div>
+      <details className="ai-guide" open={!key}>
+        <summary>{t('ai.guideTitle')}</summary>
+        {provider !== 'gemini' && <p className="muted small" style={{ margin: '6px 0' }}>{t('ai.guideFree')}</p>}
+        <ol className="small">
+          {(Array.isArray(steps) ? steps : []).map((s, i) => (
+            <li key={i}>{s}</li>
+          ))}
+        </ol>
+      </details>
       <div className="setting-row">
         <div>
           <div>{t('ai.apiKey')}</div>
@@ -125,7 +166,10 @@ export function AiSettingsPanel() {
               className="select"
               style={{ width: 'auto', maxWidth: 260 }}
               value={model}
-              onChange={(e) => update({ ...settings, models: { ...settings.models, [provider]: e.target.value } })}
+              onChange={(e) => {
+                update({ ...settings, models: { ...settings.models, [provider]: e.target.value } })
+                setResult(null)
+              }}
             >
               {models.map((m) => (
                 <option key={m.id} value={m.id}>{m.label === m.id ? m.id : `${m.label}（${m.id}）`}</option>
@@ -137,6 +181,17 @@ export function AiSettingsPanel() {
           <button className="btn" onClick={() => void test()} disabled={!key || testing}>{testing ? t('ai.testing') : t('ai.test')}</button>
         </div>
       </div>
+      {shown && (
+        <ul className="ai-test" aria-live="polite">
+          <li className={shown.keyOk ? 'ok' : 'fail'}>{shown.keyOk ? t('ai.testKeyOk', { count: shown.count }) : t('ai.testKeyFail', { message: shown.keyMessage })}</li>
+          {shown.keyOk && (
+            <li className={shown.modelOk ? 'ok' : 'fail'}>
+              {shown.modelOk ? t('ai.testModelOk', { model: shown.model }) : t('ai.testModelFail', { model: shown.model, message: shown.modelMessage })}
+            </li>
+          )}
+        </ul>
+      )}
+      <p className="muted small" style={{ margin: '8px 0 0' }}>{t('ai.testNote')}</p>
       <p className="muted small" style={{ margin: '8px 0 0' }}>{t('ai.keyWarning')}</p>
     </section>
   )

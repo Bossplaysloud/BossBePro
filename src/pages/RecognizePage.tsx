@@ -6,19 +6,20 @@ import { continuationHint, mergeRecognitions } from '../ai/merge'
 import { fuseMeasured, measuredMeasures } from '../ai/measuredStaff'
 import { buildStaffPrompt, markStaffImage, mergeStaffAnswers, STAFF_SCHEMA, staffGroups, staffLayout, staffToRecognition, subStaffLayout, type StaffAnswer } from '../ai/markedStaff'
 import { buildMarkedPrompt, layoutFromDetection, MARKED_SCHEMA, markedToRecognition, markImage, mergeMarkedAnswers, subLayout, systemGroups, type MarkedAnswer } from '../ai/markedTab'
-import { activeAi, AiError, recognize, requestJson } from '../ai/providers'
+import { activeAi, AiError, aiErrorKey, recognize, requestJson } from '../ai/providers'
 import { buildPrompt, type Recognition } from '../ai/schema'
 import { toImportedSheet, type ImportedSheet } from '../ai/toContent'
 import { ChartPreview } from '../components/ChordChartWorkspace'
 import { CropBox } from '../components/CropBox'
 import { Icon } from '../components/Icon'
+import { Modal } from '../components/Modal'
 import { JianpuView } from '../components/Jianpu'
 import { ScoreView } from '../components/ScoreView'
 import { useToast } from '../components/Toast'
 import { ChartTidyDialog, TidyDialog } from '../components/TidyDialog'
 import { TuningPicker, type TuningValue } from '../components/TuningPicker'
 import { db, newId } from '../db/db'
-import { createSheet, updateSheet } from '../db/repo'
+import { createImageSheet, createSheet, updateSheet } from '../db/repo'
 import { blobToBase64, canvasToJpeg, cropAndScale, decodeImage, openPdf, renderPdfPage, rotate, type CropRect, type Rotation } from '../lib/image'
 import { findSystems } from '../lib/systems'
 import { deskewCanvas, detectCanvas, drawDetection, enhancedCanvas } from '../lib/tabDetectView'
@@ -107,6 +108,7 @@ export function RecognizePage() {
   const [results, setResults] = useState<{ pageId: string; blob: Blob; url: string; recognition: Recognition }[]>([])
   const [progress, setProgress] = useState({ index: 0, total: 0, elapsed: 0 })
   const [error, setError] = useState<string | null>(null)
+  const [savingImages, setSavingImages] = useState(false)
   // What the TAB detector found on the image being edited (an overlay, for checking it).
   const [detected, setDetected] = useState<{ url: string; tabs: number; bars: number; numbers: number; uncertain: number; staves: number; measures: number } | null>(null)
   const abort = useRef<AbortController | null>(null)
@@ -313,24 +315,24 @@ export function RecognizePage() {
     } catch (e) {
       if ((e as Error).name === 'AbortError') return setStage('pick')
       const code = e instanceof AiError ? e.code : 'other'
-      const detail = e instanceof AiError && code === 'other' && e.message !== 'other' ? `（${e.message.slice(0, 200)}）` : ''
-      setError(`${pages.length > 1 ? t('ai.failedAt', { n: done.length + 1, total: pages.length }) : ''}${t(`ai.error.${code}`)}${detail}`)
+      const detail = e instanceof AiError && code === 'other' && !e.quota && e.message !== 'other' ? `（${e.message.slice(0, 200)}）` : ''
+      setError(`${pages.length > 1 ? t('ai.failedAt', { n: done.length + 1, total: pages.length }) : ''}${t(aiErrorKey(e))}${detail}`)
       setStage('pick')
     } finally {
       clearInterval(timer)
     }
   }
 
-  if (!ai) {
-    return (
-      <div className="page" style={{ maxWidth: 720 }}>
-        <div className="page-header"><h1>{t('ai.title')}</h1></div>
-        <div className="panel stack">
-          <p style={{ margin: 0 }}>{t('ai.noKey')}</p>
-          <div><Link className="btn btn-primary" to="/settings">{t('ai.goSettings')}</Link></div>
-        </div>
-      </div>
-    )
+  // Without recognition (no API key, or by choice): the chosen pictures, as cut, become a picture sheet.
+  const saveImages = async (title: string, sectionId: string | null) => {
+    const files: File[] = []
+    for (const [i, p] of pages.entries()) {
+      const blob = await canvasToJpeg(cropAndScale(rotate(p.source, p.rotation), p.crop))
+      files.push(new File([blob], `${title}-${i + 1}.jpg`, { type: 'image/jpeg' }))
+    }
+    const id = await createImageSheet({ title, sectionId, files })
+    toast(t('ai.imagesSaved'))
+    navigate(`/sheet/${id}`, { replace: true })
   }
 
   const merged = stage === 'review' && results.length ? mergeRecognitions(results.map((r) => r.recognition), (n, w) => t('ai.imageWarning', { n, text: w })) : null
@@ -341,14 +343,21 @@ export function RecognizePage() {
       <div className="page-header">
         <button className="btn btn-ghost btn-icon" onClick={() => navigate(-1)} aria-label={t('common.back')}><Icon name="back" /></button>
         <h1>{t('ai.title')}</h1>
-        <span className="muted small">{t('ai.using', { provider: t(`ai.provider.${ai.provider}`), model: ai.model || '—' })}</span>
+        {ai && <span className="muted small">{t('ai.using', { provider: t(`ai.provider.${ai.provider}`), model: ai.model || '—' })}</span>}
       </div>
+
+      {!ai && stage === 'pick' && (
+        <div className="ai-nokey" role="note">
+          <span style={{ flex: 1 }}>{t('ai.noKeyImport')}</span>
+          <Link className="btn" to="/settings">{t('ai.goSettings')}</Link>
+        </div>
+      )}
 
       {error && <div className="ai-error" role="alert">{error}</div>}
 
       {stage === 'pick' && (
         <div className="panel stack">
-          <div className="field-row">
+          {ai && <div className="field-row">
             <label className="field">
               <span>{t('ai.expected')}</span>
               <select className="select" value={expected} onChange={(e) => (setExpected(e.target.value as Expected), setResults([]))}>
@@ -363,7 +372,7 @@ export function RecognizePage() {
                 {[4, 5, 6, 7, 8].map((n) => <option key={n} value={n}>{t('sheet.stringsN', { count: n })}</option>)}
               </select>
             </label>
-          </div>
+          </div>}
           <div className="pick-buttons">
             <button className={`btn${pages.length ? '' : ' btn-primary'}`} onClick={() => pick(false)}><Icon name="upload" />{pages.length ? t('ai.addMore') : t('ai.chooseFile')}</button>
             <button className="btn" onClick={() => pick(true)}><Icon name="camera" />{t('ai.takePhoto')}</button>
@@ -387,15 +396,23 @@ export function RecognizePage() {
                 ))}
               </div>
               <div className="row">
-                <p className="muted small" style={{ margin: 0, flex: 1 }}>{t('ai.orderHint')}</p>
-                <button className="btn" onClick={splitSystems} title={t('ai.splitSystemsHint')}>{t('ai.splitSystems')}</button>
+                <p className="muted small" style={{ margin: 0, flex: 1 }}>{t(ai ? 'ai.orderHint' : 'ai.orderHintPlain')}</p>
+                {ai && <button className="btn" onClick={splitSystems} title={t('ai.splitSystemsHint')}>{t('ai.splitSystems')}</button>}
               </div>
               <div className="row">
-                <span className="muted small">{t('ai.privacy', { provider: t(`ai.provider.${ai.provider}`) })}</span>
+                {ai && <span className="muted small">{t('ai.privacy', { provider: t(`ai.provider.${ai.provider}`) })}</span>}
                 <span className="spacer" />
-                <button className="btn btn-primary" onClick={() => void run()}>
-                  {resumable ? t('ai.resume', { n: results.length + 1 }) : t('ai.recognizeN', { count: pages.length })}
-                </button>
+                {!fromSheet && (
+                  <button className={`btn${ai ? '' : ' btn-primary'}`} onClick={() => setSavingImages(true)} title={t('ai.saveImagesHint')}>
+                    <Icon name="upload" />
+                    {t('ai.saveImages', { count: pages.length })}
+                  </button>
+                )}
+                {ai && (
+                  <button className="btn btn-primary" onClick={() => void run()}>
+                    {resumable ? t('ai.resume', { n: results.length + 1 }) : t('ai.recognizeN', { count: pages.length })}
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -455,6 +472,8 @@ export function RecognizePage() {
         </div>
       )}
 
+      <SaveImagesDialog open={savingImages} onClose={() => setSavingImages(false)} onSave={saveImages} />
+
       {stage === 'review' && merged && (
         <Review
           result={merged}
@@ -494,6 +513,52 @@ export function RecognizePage() {
         />
       )}
     </div>
+  )
+}
+
+/** Name and section for the picture sheet made from the chosen pictures. */
+function SaveImagesDialog({ open, onClose, onSave }: { open: boolean; onClose: () => void; onSave: (title: string, sectionId: string | null) => Promise<void> }) {
+  const { t } = useTranslation()
+  const sections = useLiveQuery(() => db.sections.orderBy('order').toArray(), []) ?? []
+  const [title, setTitle] = useState('')
+  const [section, setSection] = useState('')
+  const [busy, setBusy] = useState(false)
+  const save = async () => {
+    setBusy(true)
+    try {
+      await onSave(title.trim() || t('common.untitled'), section || null)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Modal
+      open={open}
+      locked={busy}
+      onClose={onClose}
+      title={t('ai.saveImagesTitle')}
+      actions={
+        <>
+          <button className="btn" disabled={busy} onClick={onClose}>{t('common.cancel')}</button>
+          <button className="btn btn-primary" disabled={busy} onClick={() => void save()}>{t('common.save')}</button>
+        </>
+      }
+    >
+      <label className="field">
+        <span>{t('sheet.title')}</span>
+        <input className="input" value={title} placeholder={t('sheet.titlePlaceholder')} autoFocus onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && void save()} />
+      </label>
+      <label className="field">
+        <span>{t('sheet.section')}</span>
+        <select className="select" value={section} onChange={(e) => setSection(e.target.value)}>
+          <option value="">{t('nav.unsorted')}</option>
+          {sections.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+      </label>
+      <p className="muted small" style={{ margin: 0 }}>{t('ai.saveImagesNote')}</p>
+    </Modal>
   )
 }
 
