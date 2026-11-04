@@ -831,9 +831,10 @@ textarea.input { border-radius: 18px; }
 .sidebar-footer { border-top: 0; }
 .brand-cap { color: #3d5a3a; font-weight: 700; }
 :root[data-theme='dark'] .brand-cap { color: #c6d3bf; }
-/* Sidebar title in a brush script (one weight: the capitals stay green but not bolder). */
-.sidebar .brand > span { font-family: 'Kaushan Script', cursive; font-weight: 400; letter-spacing: 0.01em; font-size: 1.35em; line-height: 1.1; }
-.sidebar .brand .brand-cap { font-weight: 400; }
+/* The app name in a brush script wherever it is shown (one weight: the capitals stay green but not bolder). */
+.brand-name { font-family: 'Kaushan Script', cursive; font-weight: 400; letter-spacing: 0.01em; }
+.brand-name .brand-cap { font-weight: 400; }
+.sidebar .brand-name, .topbar .brand-name { font-size: 1.35em; line-height: 1.1; }
 .sidebar-top { display: flex; align-items: center; gap: 4px; }
 .sidebar-top .brand { flex: 1; min-width: 0; }
 .sidebar-hide { margin-bottom: 12px; color: var(--text-muted); }
