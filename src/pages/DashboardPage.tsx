@@ -56,6 +56,7 @@ function BossNote() {
       <h2>{BOSS_NOTE.title}</h2>
       <p>{BOSS_NOTE.text}</p>
       <div className="dash-note-links">
+        {BOSS_NOTE.email && <span>email：{BOSS_NOTE.email}</span>}
         {BOSS_NOTE.instagram && (
           <a href={BOSS_NOTE.instagram} target="_blank" rel="noreferrer">Instagram @bossplaysloud</a>
         )}
@@ -90,7 +91,7 @@ export function DashboardPage() {
   return (
     <div className="page dashboard">
       <div className="dash-bar">
-        <span className="dash-brand">BEPRO</span>
+        <span className="dash-brand">BOSSBEPRO</span>
         <form
           className="dash-search"
           role="search"
@@ -129,7 +130,7 @@ export function DashboardPage() {
         <section className="dash-panel dash-hero">
           <img className="dash-guitar" src={guitarUrl} alt="" aria-hidden="true" draggable={false} />
           <div>
-            <h1 className="dash-display">BePro</h1>
+            <h1 className="dash-display">BossBePro</h1>
             <p className="dash-sub">{t('app.tagline')}<br />{t('dash.tagline')}</p>
           </div>
           <div className="dash-actions">

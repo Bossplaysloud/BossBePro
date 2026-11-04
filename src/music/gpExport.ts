@@ -33,4 +33,4 @@ export async function sheetToGp(sheet: GpSource): Promise<Uint8Array | null> {
 }
 
 /** A safe file name for the sheet: its title without characters file systems refuse. */
-export const gpFileName = (title: string) => `${title.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || 'BePro'}.gp`
+export const gpFileName = (title: string) => `${title.replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim() || 'BossBePro'}.gp`

@@ -24,8 +24,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'BePro',
-        short_name: 'BePro',
+        name: 'BossBePro',
+        short_name: 'BossBePro',
         description: 'String instrument practice & score notebook',
         theme_color: '#ffffff',
         background_color: '#ffffff',

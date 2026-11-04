@@ -903,7 +903,7 @@ dialog.modal { border: 0; border-radius: 28px; background: var(--bg); box-shadow
 /* In a narrow panel the title keeps the room; the type still shows as the dot's color. */
 @container (max-width: 360px) { .dash-row-type { display: none; } }
 .dash-groups { grid-area: groups; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 26px; }
-.dash-display { font-family: var(--display); font-weight: 200; font-size: clamp(2.4rem, 5vw, 3.4rem); letter-spacing: 0.06em; line-height: 1; margin: 0; }
+.dash-display { font-family: var(--display); font-weight: 200; font-size: clamp(1.9rem, 3.8vw, 2.8rem); letter-spacing: 0.04em; line-height: 1; margin: 0; }
 .dash-sub { margin: 10px 0 0; color: var(--text-muted); line-height: 1.7; }
 .dash-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; }
 .dash-actions .btn { min-height: 46px; padding: 0 22px; }

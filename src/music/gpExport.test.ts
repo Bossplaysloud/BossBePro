@@ -41,6 +41,6 @@ describe('GP export', () => {
     expect(canExportGp(chord)).toBe(false)
     expect(await sheetToGp({ ...chord, type: 'image' })).toBeNull()
     expect(gpFileName('Autumn Leaves / Solo?')).toBe('Autumn Leaves Solo.gp')
-    expect(gpFileName('  ')).toBe('BePro.gp')
+    expect(gpFileName('  ')).toBe('BossBePro.gp')
   })
 })

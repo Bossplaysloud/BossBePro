@@ -133,7 +133,7 @@ export async function restoreBackup(
 
 export function backupFileName(date = new Date()) {
   const p = (n: number) => String(n).padStart(2, '0')
-  return `BePro-backup-${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}.json`
+  return `BossBePro-backup-${date.getFullYear()}${p(date.getMonth() + 1)}${p(date.getDate())}-${p(date.getHours())}${p(date.getMinutes())}.json`
 }
 
 const isIOS = () =>

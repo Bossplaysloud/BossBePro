@@ -1,5 +1,5 @@
 const zhTW = {
-  app: { name: 'BePro', tagline: '弦樂器練習譜本' },
+  app: { name: 'BossBePro', tagline: '弦樂器練習譜本' },
   nav: { home: '首頁', library: '譜本', settings: '設定', allSheets: '全部的譜', unsorted: '未分類', sections: '分類', songbooks: '歌本', menu: '選單', hideSidebar: '隱藏側邊欄', showSidebar: '顯示側邊欄' },
   common: {
     cancel: '取消', save: '儲存', delete: '刪除', rename: '重新命名', create: '建立', close: '關閉', confirm: '確定',
@@ -61,7 +61,7 @@ const zhTW = {
     notes: [
       '存成 Guitar Pro 7／8 的 .gp 格式。可用 Guitar Pro 7、8，MuseScore 4，TuxGuitar 新版開啟；Guitar Pro 5 以前的舊版本打不開。',
       '會帶入：音符、節奏、調弦、速度、拍號、調號、連結線、推弦／滑音／泛音等技巧。',
-      'BePro 裡的筆記、和弦圖排版、指板設定不會帶入；簡譜會以五線譜的形式存入。',
+      'BossBePro 裡的筆記、和弦圖排版、指板設定不會帶入；簡譜會以五線譜的形式存入。',
     ],
   },
   bulk: {
@@ -237,7 +237,7 @@ const zhTW = {
       anthropic: ['打開 Anthropic Console（下方「取得金鑰」連結），註冊並登入。', '到 Billing 儲值（Claude 沒有免費額度）。', '到 API Keys 按「Create Key」，複製金鑰（sk-ant- 開頭），貼到上面按「儲存」。', '按「測試連線」確認可以使用。'],
       openai: ['打開 OpenAI Platform（下方「取得金鑰」連結），註冊並登入。', '到 Billing 儲值（API 沒有免費額度）。', '到 API keys 按「Create new secret key」，複製金鑰（sk- 開頭），貼到上面按「儲存」。', '按「測試連線」確認可以使用。'],
     },
-    keyWarning: '金鑰只存在這台裝置的瀏覽器中，不會上傳到 BePro，也不會包含在備份裡；只會傳給你選的 AI 服務。若這台裝置與他人共用，用完請清除金鑰。',
+    keyWarning: '金鑰只存在這台裝置的瀏覽器中，不會上傳到 BossBePro，也不會包含在備份裡；只會傳給你選的 AI 服務。若這台裝置與他人共用，用完請清除金鑰。',
   },
   gp: {
     button: '匯入 GP 譜', title: '匯入 Guitar Pro / MusicXML', chooseFile: '選擇檔案',
@@ -314,11 +314,11 @@ const zhTW = {
   view: { arrangingTwoPage: '正在排成雙頁，長的譜需要幾秒…', twoPage: '雙頁', twoPageHint: '像翻開的書：左頁看完接右頁（看譜用；雙頁時播放游標與範圍標示不顯示）', zoom: '譜的顯示大小', list: '列表', grid: '卡片', allTags: '全部標籤' },
   settings: {
     about: '關於',
-    credits: 'BePro 的譜面繪製與播放使用 alphaTab（MPL-2.0），音樂符號字型 Bravura（SIL OFL），內建音色 SONiVOX EAS。',
+    credits: 'BossBePro 的譜面繪製與播放使用 alphaTab（MPL-2.0），音樂符號字型 Bravura（SIL OFL），內建音色 SONiVOX EAS。',
     title: '設定', appearance: '外觀', theme: '主題', light: '白色', dark: '黑色', language: '語言',
     backup: '備份與還原', lastBackup: '上次備份', never: '尚未備份',
     exportBackup: '匯出備份', exportHint: '把所有譜、分類、自訂 tuning 與音色存成一個檔案。',
-    restore: '從備份還原', restoreHint: '選擇之前匯出的 BePro 備份檔。',
+    restore: '從備份還原', restoreHint: '選擇之前匯出的 BossBePro（或 BePro）備份檔。',
     reminder: '備份提醒', reminderEvery: '每 {{count}} 天', reminderOff: '關閉',
     storage: '儲存空間', storageUsed: '已使用 {{used}}', persisted: '已要求瀏覽器保留資料',
     notPersisted: '瀏覽器可能在空間不足時清除資料，請定期備份。',
@@ -330,7 +330,7 @@ const zhTW = {
     replaceConfirmTitle: '確定要覆蓋？', replaceConfirmBody: '目前裝置上的所有譜與分類都會被刪除，並以備份內容取代。此動作無法復原。',
     replaceConfirm: '覆蓋並還原', start: '開始還原',
     done: '還原完成：新增 {{added}}、更新 {{updated}}、略過 {{skipped}}',
-    invalid: '這不是有效的 BePro 備份檔。', newerFormat: '這個備份來自較新版本的 BePro，請先更新 App。',
+    invalid: '這不是有效的 BossBePro 備份檔。', newerFormat: '這個備份來自較新版本的 BossBePro，請先更新 App。',
   },
   reminder: {
     title: '該備份了', body: '你的譜只存在這台裝置上。距離上次備份已超過 {{days}} 天，且有新的修改。建議現在匯出一份備份。',

@@ -1,4 +1,4 @@
-# BePro
+# BossBePro
 
 弦樂器練習與譜本 PWA。規格見上層的 `開發計畫.md`。
 

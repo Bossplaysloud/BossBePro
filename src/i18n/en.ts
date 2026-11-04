@@ -3,7 +3,7 @@ import type zhTW from './zh-TW'
 type Shape<T> = { [K in keyof T]: T[K] extends string ? string : Shape<T[K]> }
 
 const en: Shape<typeof zhTW> = {
-  app: { name: 'BePro', tagline: 'Practice notebook for string players' },
+  app: { name: 'BossBePro', tagline: 'Practice notebook for string players' },
   nav: { home: 'Home', library: 'Library', settings: 'Settings', allSheets: 'All sheets', unsorted: 'Unsorted', sections: 'Sections', songbooks: 'Songbooks', menu: 'Menu', hideSidebar: 'Hide sidebar', showSidebar: 'Show sidebar' },
   common: {
     cancel: 'Cancel', save: 'Save', delete: 'Delete', rename: 'Rename', create: 'Create', close: 'Close', confirm: 'OK',
@@ -65,7 +65,7 @@ const en: Shape<typeof zhTW> = {
     notes: [
       'Saved in the Guitar Pro 7/8 .gp format. Opens in Guitar Pro 7 and 8, MuseScore 4 and recent TuxGuitar; Guitar Pro 5 and older cannot open it.',
       'Kept: notes, rhythm, tuning, tempo, time and key signatures, ties, and techniques such as bends, slides and harmonics.',
-      'Not kept: BePro notes, chord chart layout and fretboard settings; numbered notation is saved as staff notation.',
+      'Not kept: BossBePro notes, chord chart layout and fretboard settings; numbered notation is saved as staff notation.',
     ],
   },
   bulk: {
@@ -241,7 +241,7 @@ const en: Shape<typeof zhTW> = {
       anthropic: ['Open the Anthropic Console (the "Get a key" link below), sign up and sign in.', 'Add credit under Billing (Claude has no free tier).', 'Under API Keys press "Create Key", copy the key (it starts with sk-ant-), paste it above and press Save.', 'Press "Test connection" to check it works.'],
       openai: ['Open the OpenAI Platform (the "Get a key" link below), sign up and sign in.', 'Add credit under Billing (the API has no free tier).', 'Under API keys press "Create new secret key", copy the key (it starts with sk-), paste it above and press Save.', 'Press "Test connection" to check it works.'],
     },
-    keyWarning: 'The key is stored only in this browser. It is not uploaded to BePro or included in backups, and is sent only to the AI service you chose. Clear it after use on a shared device.',
+    keyWarning: 'The key is stored only in this browser. It is not uploaded to BossBePro or included in backups, and is sent only to the AI service you chose. Clear it after use on a shared device.',
   },
   gp: {
     button: 'Import GP file', title: 'Import Guitar Pro / MusicXML', chooseFile: 'Choose file',
@@ -318,11 +318,11 @@ const en: Shape<typeof zhTW> = {
   view: { arrangingTwoPage: 'Laying out two pages; long scores take a few seconds…', twoPage: 'Two pages', twoPageHint: 'Like an open book: the left page, then the right page (for reading; the playback cursor and range marks are hidden)', zoom: 'Sheet display size', list: 'List', grid: 'Cards', allTags: 'All tags' },
   settings: {
     about: 'About',
-    credits: 'BePro draws and plays scores with alphaTab (MPL-2.0), the Bravura music font (SIL OFL) and the SONiVOX EAS sounds.',
+    credits: 'BossBePro draws and plays scores with alphaTab (MPL-2.0), the Bravura music font (SIL OFL) and the SONiVOX EAS sounds.',
     title: 'Settings', appearance: 'Appearance', theme: 'Theme', light: 'Light', dark: 'Dark', language: 'Language',
     backup: 'Backup & restore', lastBackup: 'Last backup', never: 'Never',
     exportBackup: 'Export backup', exportHint: 'Save all sheets, sections, custom tunings and sounds into one file.',
-    restore: 'Restore from backup', restoreHint: 'Choose a BePro backup file you exported earlier.',
+    restore: 'Restore from backup', restoreHint: 'Choose a BossBePro (or BePro) backup file you exported earlier.',
     reminder: 'Backup reminder', reminderEvery: 'Every {{count}} days', reminderOff: 'Off',
     storage: 'Storage', storageUsed: '{{used}} used', persisted: 'Browser asked to keep data',
     notPersisted: 'The browser may clear data when space runs low. Back up regularly.',
@@ -334,7 +334,7 @@ const en: Shape<typeof zhTW> = {
     replaceConfirmTitle: 'Replace everything?', replaceConfirmBody: 'All sheets and sections on this device will be deleted and replaced by the backup. This cannot be undone.',
     replaceConfirm: 'Replace and restore', start: 'Restore',
     done: 'Restored: {{added}} added, {{updated}} updated, {{skipped}} skipped',
-    invalid: 'This is not a valid BePro backup file.', newerFormat: 'This backup comes from a newer version of BePro. Please update the app.',
+    invalid: 'This is not a valid BossBePro backup file.', newerFormat: 'This backup comes from a newer version of BossBePro. Please update the app.',
   },
   reminder: {
     title: 'Time to back up', body: 'Your sheets live only on this device. It has been more than {{days}} days since your last backup and you have new changes. Export a backup now.',
