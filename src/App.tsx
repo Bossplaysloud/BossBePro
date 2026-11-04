@@ -6,6 +6,7 @@ import { Icon } from './components/Icon'
 import { Sidebar } from './components/Sidebar'
 import { ToastProvider } from './components/Toast'
 import { requestPersistentStorage } from './db/db'
+import { useSidebarHidden } from './lib/settings'
 import { DashboardPage } from './pages/DashboardPage'
 import { ImportGpPage } from './pages/ImportGpPage'
 import { LibraryPage } from './pages/LibraryPage'
@@ -20,9 +21,10 @@ function Shell() {
   const { t } = useTranslation()
   const [drawer, setDrawer] = useState(false)
   const location = useLocation()
+  const [hidden, setHidden] = useSidebarHidden()
 
   return (
-    <div className="shell">
+    <div className={`shell${hidden ? ' sidebar-hidden' : ''}`}>
       <header className="topbar">
         <button className="btn btn-ghost btn-icon" onClick={() => setDrawer(true)} aria-label={t('nav.menu')}>
           <Icon name="menu" />
@@ -34,6 +36,11 @@ function Shell() {
       </header>
       <div className={`drawer-backdrop${drawer ? ' open' : ''}`} onClick={() => setDrawer(false)} />
       <Sidebar open={drawer} onNavigate={() => setDrawer(false)} />
+      {hidden && (
+        <button className="btn btn-icon sidebar-show" onClick={() => setHidden(false)} aria-label={t('nav.showSidebar')} title={t('nav.showSidebar')}>
+          <Icon name="sidebar" />
+        </button>
+      )}
       <main className="main">
         <Routes>
           <Route path="/" element={<DashboardPage />} />

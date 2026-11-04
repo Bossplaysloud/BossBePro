@@ -6,6 +6,7 @@ import guitarUrl from '../assets/guitar.webp'
 import { BOSS_NOTE } from '../content/bossNote'
 import { db } from '../db/db'
 import { Icon } from '../components/Icon'
+import { ExportSheetDialog } from '../components/ExportSheetDialog'
 import { NewSheetDialog } from '../components/NewSheetDialog'
 import { pickScoreFile } from '../lib/pickFiles'
 import { GP_EXTENSIONS } from '../music/gpImport'
@@ -74,6 +75,7 @@ export function DashboardPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [creating, setCreating] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [query, setQuery] = useState('')
   const sheets = useLiveQuery(() => db.sheets.toArray(), [])
   const sections = useLiveQuery(() => db.sections.orderBy('order').toArray(), [])
@@ -143,6 +145,10 @@ export function DashboardPage() {
               <Icon name="plus" />
               {t('sheet.new')}
             </button>
+            <button className="btn" onClick={() => setExporting(true)}>
+              <Icon name="download" />
+              {t('exportFile.button')}
+            </button>
           </div>
         </section>
 
@@ -178,6 +184,7 @@ export function DashboardPage() {
 
       <BossNote />
 
+      <ExportSheetDialog open={exporting} onClose={() => setExporting(false)} />
       <NewSheetDialog open={creating} onClose={() => setCreating(false)} sectionId={null} />
     </div>
   )

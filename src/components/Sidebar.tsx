@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { db, type Section, type Songbook } from '../db/db'
 import { createSection, createSongbook, reorder } from '../db/repo'
+import { useNavGroupOpen, useSidebarHidden } from '../lib/settings'
 import { DeleteGroupsDialog } from './DeleteGroupsDialog'
 import { Icon } from './Icon'
 import { PromptModal } from './Modal'
@@ -52,6 +53,16 @@ function SongbookItem({ book, onNavigate }: { book: Songbook; onNavigate: () => 
   )
 }
 
+/** A group heading that folds its list away; the little arrow shows which way. */
+function GroupToggle({ label, open, onToggle }: { label: string; open: boolean; onToggle: () => void }) {
+  return (
+    <button className={`nav-group-toggle${open ? ' open' : ''}`} aria-expanded={open} onClick={onToggle}>
+      <Icon name="chevron" size={14} />
+      {label}
+    </button>
+  )
+}
+
 export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () => void }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -63,6 +74,12 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
   const [managing, setManaging] = useState(false)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [deleting, setDeleting] = useState(false)
+  const [, setHidden] = useSidebarHidden()
+  const [sectionsOpen, setSectionsOpen] = useNavGroupOpen('sections')
+  const [booksOpen, setBooksOpen] = useNavGroupOpen('songbooks')
+  // Managing shows both lists, folded or not, so everything can be ticked.
+  const showSections = sectionsOpen || managing
+  const showBooks = booksOpen || managing
   const toggle = (id: string) =>
     setPicked((p) => {
       const next = new Set(p)
@@ -81,10 +98,15 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
 
   return (
     <nav className={`sidebar${open ? ' open' : ''}`} aria-label={t('nav.menu')}>
-      <Link to="/" className="brand" onClick={onNavigate} aria-label={t('nav.home')}>
-        <img src="./favicon.svg" alt="" />
-        {t('app.name')}
-      </Link>
+      <div className="sidebar-top">
+        <Link to="/" className="brand" onClick={onNavigate} aria-label={t('nav.home')}>
+          <img src="./favicon.svg" alt="" />
+          {t('app.name')}
+        </Link>
+        <button className="btn btn-ghost btn-icon sidebar-hide" onClick={() => setHidden(true)} aria-label={t('nav.hideSidebar')} title={t('nav.hideSidebar')}>
+          <Icon name="sidebar" />
+        </button>
+      </div>
 
       <NavLink to="/" end className="nav-item" onClick={onNavigate}>
         <Icon name="home" />
@@ -102,12 +124,12 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
       </NavLink>
 
       <div className="nav-label nav-label-row">
-        <span>{t('nav.sections')}</span>
+        <GroupToggle label={t('nav.sections')} open={showSections} onToggle={() => setSectionsOpen(!sectionsOpen)} />
         {(sections.length > 0 || songbooks.length > 0) && (
           <button className="link-btn" onClick={() => (managing ? stopManaging() : setManaging(true))}>{managing ? t('manage.done') : t('manage.manage')}</button>
         )}
       </div>
-      {managing ? (
+      {!showSections ? null : managing ? (
         sections.map((s) => <CheckItem key={s.id} name={s.name} count={countIn(s.id)} checked={picked.has(s.id)} onToggle={() => toggle(s.id)} />)
       ) : (
         <SortableList ids={sections.map((s) => s.id)} onReorder={(ids) => void reorder('sections', ids)}>
@@ -121,15 +143,17 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
           ))}
         </SortableList>
       )}
-      {!managing && (
+      {showSections && !managing && (
         <button className="nav-item muted" onClick={() => setCreating(true)}>
           <Icon name="plus" />
           {t('section.new')}
         </button>
       )}
 
-      <div className="nav-label">{t('nav.songbooks')}</div>
-      {managing ? (
+      <div className="nav-label">
+        <GroupToggle label={t('nav.songbooks')} open={showBooks} onToggle={() => setBooksOpen(!booksOpen)} />
+      </div>
+      {!showBooks ? null : managing ? (
         songbooks.map((b) => <CheckItem key={b.id} name={b.name} count={b.entries.length} checked={picked.has(b.id)} onToggle={() => toggle(b.id)} />)
       ) : (
         <SortableList ids={songbooks.map((b) => b.id)} onReorder={(ids) => void reorder('songbooks', ids)}>
@@ -138,7 +162,7 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
           ))}
         </SortableList>
       )}
-      {!managing && (
+      {showBooks && !managing && (
         <button className="nav-item muted" onClick={() => setCreatingBook(true)}>
           <Icon name="book" />
           {t('songbook.new')}

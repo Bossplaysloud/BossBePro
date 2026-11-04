@@ -158,7 +158,7 @@ export function SongbookPage() {
           {t('songbook.add')}
         </button>
         {entries.length > 0 && (
-          <Link className="btn btn-primary" to={`/songbook/${book.id}/play/1`}>
+          <Link className="btn btn-read" to={`/songbook/${book.id}/play/1`}>
             <Icon name="read" />
             {t('reader.start')}
           </Link>

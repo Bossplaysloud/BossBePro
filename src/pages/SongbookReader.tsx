@@ -9,13 +9,14 @@ import { ImageSheetRead } from '../components/ImageSheetView'
 import { JianpuView } from '../components/Jianpu'
 import { ScoreView } from '../components/ScoreView'
 import { useTwoPage } from '../lib/settings'
-import { melodyToAlphaTex, tabToAlphaTex, type MelodyTexOptions } from '../music/alphatex'
+import { melodyToAlphaTex, tabToAlphaTex } from '../music/alphatex'
+import { SHEET_CLEF } from '../music/gpExport'
 import { isChordChartContent } from '../music/chordChart'
 import { sheetProgram } from '../music/instruments'
 import { isMelodyContent, numberedBase } from '../music/melody'
 import { isTabContent } from '../music/tab'
 
-const CLEF: Record<Sheet['instrument'], MelodyTexOptions['clef']> = { guitar: 'treble8', custom: 'treble8', bass: 'bass', ukulele: 'treble' }
+const CLEF = SHEET_CLEF
 const SIZE_KEY = 'bepro.readerSize'
 const noop = () => {}
 

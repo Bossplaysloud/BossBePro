@@ -679,7 +679,7 @@ dialog.modal.wide { width: min(760px, calc(100vw - 32px)); }
 @page { size: A4 portrait; margin: 12mm; }
 @media print {
   html, body, #root, .shell, .main { height: auto !important; overflow: visible !important; display: block !important; background: #fff !important; }
-  .sidebar, .topbar, .drawer-backdrop, .print-toolbar, .toast, dialog { display: none !important; }
+  .sidebar, .sidebar-show, .topbar, .drawer-backdrop, .print-toolbar, .toast, dialog { display: none !important; }
   .print-page { padding: 0; }
   /* The score is drawn in absolutely placed pieces: let them flow, and never cut one across pages. */
   .print-sheet .at-surface { height: auto !important; }
@@ -807,6 +807,8 @@ dialog.modal.wide { width: min(760px, calc(100vw - 32px)); }
 .btn-danger { color: var(--danger); }
 .btn-danger.btn-primary { background: var(--danger); color: #fff; }
 .btn-ghost { box-shadow: none; background: transparent; }
+/* The songbook's reading-mode button: light sage, the same in dark mode. */
+.btn-read, .btn-read:hover { background: #c6d3bf; color: #000; }
 .btn-ghost:hover { box-shadow: var(--inset-sm); background: transparent; }
 .btn-icon { width: 40px; padding: 0; border-radius: 50%; }
 .btn:disabled, .btn:disabled:hover { box-shadow: var(--raise-sm); }
@@ -825,6 +827,25 @@ textarea.input { border-radius: 18px; }
 .nav-item:hover { background: transparent; box-shadow: var(--inset-sm); }
 .nav-item.active { background: var(--surface); box-shadow: var(--raise-sm); font-weight: 700; }
 .sidebar-footer { border-top: 0; }
+.sidebar-top { display: flex; align-items: center; gap: 4px; }
+.sidebar-top .brand { flex: 1; min-width: 0; }
+.sidebar-hide { margin-bottom: 12px; color: var(--text-muted); }
+.sidebar-show { display: none; }
+@media (min-width: 861px) {
+  .shell.sidebar-hidden { grid-template-columns: 1fr; }
+  .shell.sidebar-hidden .sidebar { display: none; }
+  .shell.sidebar-hidden .main { padding-left: 56px; }
+  .sidebar-show { display: inline-flex; position: fixed; top: 16px; left: 14px; z-index: 15; }
+}
+@media (max-width: 860px) {
+  .sidebar-hide { display: none; }
+}
+.nav-group-toggle {
+  display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none;
+  font: inherit; color: inherit; cursor: pointer;
+}
+.nav-group-toggle svg { transform: rotate(-90deg); transition: transform 0.15s ease; }
+.nav-group-toggle.open svg { transform: none; }
 @media (max-width: 860px) {
   .topbar { border-bottom: 0; background: var(--bg); box-shadow: 0 6px 14px var(--sd); position: relative; z-index: 2; }
 }
@@ -932,3 +953,11 @@ dialog.modal { border: 0; border-radius: 28px; background: var(--bg); box-shadow
   .dash-search { flex: 1; margin-left: 0; }
   .dash-panel { padding: 20px; }
 }
+
+/* Export file (home page): the sheet list, a greyed-out format, and the note about GP files */
+.export-list { display: flex; flex-direction: column; max-height: min(50vh, 420px); overflow: auto; border-radius: 20px; padding: 4px 14px; box-shadow: var(--inset); }
+.export-row { width: 100%; border: 0; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.export-row:hover .dash-row-title { text-decoration: underline; text-underline-offset: 3px; }
+.choice.disabled { opacity: 0.55; cursor: default; }
+.export-note { padding: 12px 16px; border-radius: 16px; background: color-mix(in srgb, #c6d3bf 45%, var(--surface)); color: var(--text); font-size: 0.88rem; line-height: 1.6; }
+.export-note ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }

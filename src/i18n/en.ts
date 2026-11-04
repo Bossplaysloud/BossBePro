@@ -4,7 +4,7 @@ type Shape<T> = { [K in keyof T]: T[K] extends string ? string : Shape<T[K]> }
 
 const en: Shape<typeof zhTW> = {
   app: { name: 'BePro', tagline: 'Practice notebook for string players' },
-  nav: { home: 'Home', library: 'Library', settings: 'Settings', allSheets: 'All sheets', unsorted: 'Unsorted', sections: 'Sections', songbooks: 'Songbooks', menu: 'Menu' },
+  nav: { home: 'Home', library: 'Library', settings: 'Settings', allSheets: 'All sheets', unsorted: 'Unsorted', sections: 'Sections', songbooks: 'Songbooks', menu: 'Menu', hideSidebar: 'Hide sidebar', showSidebar: 'Show sidebar' },
   common: {
     cancel: 'Cancel', save: 'Save', delete: 'Delete', rename: 'Rename', create: 'Create', close: 'Close', confirm: 'OK',
     search: 'Search', back: 'Back', edit: 'Edit', untitled: 'Untitled',
@@ -55,6 +55,23 @@ const en: Shape<typeof zhTW> = {
     unsorted: 'Unsorted {{count}} →', sheets: '{{count}} sheets', showAll: 'Show all ({{count}})', showLess: 'Show less',
     noSheets: 'No sheets yet. Import a GP file or pictures above, or create a sheet.', noSections: 'No sections yet; add one in the sidebar.', noSongbooks: 'No songbooks yet; add one in the sidebar.',
     sponsor: 'Sponsor', search: 'Search sheets', today: 'Today', sheetsLabel: 'sheets', tagline: 'Import, recognize and organize your sheets',
+  },
+  exportFile: {
+    button: 'Export file', title: 'Export file', change: 'Pick another sheet', toPdf: 'Go to PDF export', downloadGp: 'Download GP file',
+    pdfHint: 'Laid out on A4; in the print window choose “Save as PDF”. Works for every kind of sheet.',
+    gp: 'Guitar Pro file (.gp)', gpHint: 'Guitar Pro 7/8 format, to keep editing in Guitar Pro, MuseScore and others.', gpHintNumbered: 'Guitar Pro 7/8 format; numbered notation is saved as staff notation.',
+    gpUnavailable: 'A {{type}} has no notes, so it can only be exported as PDF.', gpEmpty: 'This sheet has no notes yet.', gpSaved: 'Downloaded “{{name}}”', gpFailed: 'Could not export the GP file. Try again.',
+    noteTitle: 'About GP files',
+    notes: [
+      'Saved in the Guitar Pro 7/8 .gp format. Opens in Guitar Pro 7 and 8, MuseScore 4 and recent TuxGuitar; Guitar Pro 5 and older cannot open it.',
+      'Kept: notes, rhythm, tuning, tempo, time and key signatures, ties, and techniques such as bends, slides and harmonics.',
+      'Not kept: BePro notes, chord chart layout and fretboard settings; numbered notation is saved as staff notation.',
+    ],
+  },
+  bulk: {
+    move: 'Move to section', toSongbook: 'Add to songbook', choose: 'Move here', moveTitle: 'Move {{count}} sheets to…', songbookTitle: 'Add {{count}} sheets to a songbook',
+    createSection: 'Create section and move', createSongbook: 'Create songbook and add', moved: 'Moved {{count}} sheets to “{{name}}”', added: 'Added {{count}} sheets to “{{name}}”',
+    songbookHint: 'They are added at the end of the songbook; their sections stay as they are.',
   },
   multiSelect: {
     start: 'Select', done: 'Done', count: '{{count}} selected', all: 'Select all', none: 'Clear',

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { db } from '../db/db'
 import { deleteSheet, renameSection, reorder } from '../db/repo'
+import { AddManyToSongbookDialog, MoveToSectionDialog } from '../components/BulkSheetDialogs'
 import { DeleteGroupsDialog } from '../components/DeleteGroupsDialog'
 import { Icon } from '../components/Icon'
 import { ConfirmModal, PromptModal } from '../components/Modal'
@@ -37,6 +38,7 @@ export function LibraryPage({ scope: fixed }: { scope?: Scope }) {
   // Selecting several sheets (to delete them together).
   const [selecting, setSelecting] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [bulk, setBulk] = useState<'move' | 'songbook' | null>(null)
   const [deletingMany, setDeletingMany] = useState(false)
 
   const section = scope.kind === 'section' ? sections?.find((s) => s.id === scope.id) : undefined
@@ -62,6 +64,12 @@ export function LibraryPage({ scope: fixed }: { scope?: Scope }) {
   }, [inScope, query, tag, searchNotes])
 
   if (!sections || !allSheets) return null
+
+  const finishBulk = () => {
+    setBulk(null)
+    setSelected(new Set())
+    setSelecting(false)
+  }
   if (scope.kind === 'section' && !section) return <Navigate to="/" replace />
 
   const title = scope.kind === 'all' ? t('nav.allSheets') : scope.kind === 'unsorted' ? t('nav.unsorted') : section!.name
@@ -125,6 +133,14 @@ export function LibraryPage({ scope: fixed }: { scope?: Scope }) {
           <button className="btn" onClick={() => setSelected(new Set(visible.map((s) => s.id)))}>{t('multiSelect.all')}</button>
           <button className="btn" disabled={!selected.size} onClick={() => setSelected(new Set())}>{t('multiSelect.none')}</button>
           <span className="spacer" />
+          <button className="btn" disabled={!selected.size} onClick={() => setBulk('move')}>
+            <Icon name="folder" />
+            {t('bulk.move')}
+          </button>
+          <button className="btn" disabled={!selected.size} onClick={() => setBulk('songbook')}>
+            <Icon name="book" />
+            {t('bulk.toSongbook')}
+          </button>
           <button className="btn btn-danger" disabled={!selected.size} onClick={() => setDeletingMany(true)}>
             <Icon name="trash" />
             {t('multiSelect.delete', { count: selected.size })}
@@ -184,6 +200,9 @@ export function LibraryPage({ scope: fixed }: { scope?: Scope }) {
           setSelecting(false)
         }}
       />
+      {/* Selected sheets in list order, so a songbook gets them in the order they are shown. */}
+      <MoveToSectionDialog open={bulk === 'move'} sheetIds={visible.filter((s) => selected.has(s.id)).map((s) => s.id)} onClose={() => setBulk(null)} onDone={finishBulk} />
+      <AddManyToSongbookDialog open={bulk === 'songbook'} sheetIds={visible.filter((s) => selected.has(s.id)).map((s) => s.id)} onClose={() => setBulk(null)} onDone={finishBulk} />
       <NewSheetDialog open={creating} onClose={() => setCreating(false)} sectionId={section?.id ?? null} />
       <PromptModal
         open={renaming}

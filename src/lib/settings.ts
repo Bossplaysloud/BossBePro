@@ -118,6 +118,18 @@ export function useFretPanelPinned(): [boolean, (on: boolean) => void] {
   return [on, (v) => write('bepro.fretPanelPinned', v ? '1' : '0')]
 }
 
+/** Wide screens: the sidebar is folded away. */
+export function useSidebarHidden(): [boolean, (on: boolean) => void] {
+  const on = useKey('bepro.sidebarHidden') === '1'
+  return [on, (v) => write('bepro.sidebarHidden', v ? '1' : '0')]
+}
+
+/** Whether the sidebar's sections or songbooks list is unfolded (open unless folded before). */
+export function useNavGroupOpen(group: 'sections' | 'songbooks'): [boolean, (open: boolean) => void] {
+  const open = useKey(`bepro.navOpen.${group}`) !== '0'
+  return [open, (v) => write(`bepro.navOpen.${group}`, v ? '1' : '0')]
+}
+
 /** A hand-picked fretboard range for one sheet: from a note (or a whole measure) to a note (or a whole measure). */
 export interface CustomRange {
   from: { m: number; b: number | null } // 0-based measure; beat index, or null for the whole measure

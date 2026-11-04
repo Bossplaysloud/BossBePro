@@ -80,6 +80,12 @@ export async function updateSheet(id: string, changes: Partial<Omit<Sheet, 'id' 
   await db.sheets.update(id, { ...changes, updatedAt: Date.now() })
 }
 
+/** Moves several sheets into one section (null: unsorted). */
+export async function moveSheets(ids: string[], sectionId: string | null) {
+  const now = Date.now()
+  await db.sheets.where('id').anyOf(ids).modify({ sectionId, updatedAt: now })
+}
+
 /** Deleting a sheet also takes it out of every songbook (and a picture / PDF sheet takes its files along). */
 export async function deleteSheet(id: string) {
   await db.transaction('rw', db.sheets, db.songbooks, db.assets, async () => {

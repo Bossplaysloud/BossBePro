@@ -2,12 +2,12 @@ import { useLiveQuery } from 'dexie-react-hooks'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
-import { flushPendingSaves } from '../lib/pendingSaves'
 import { db, SHEET_TYPES, type SheetType } from '../db/db'
 import { deleteSheet, switchSheetType, updateSheet } from '../db/repo'
 import { Icon } from '../components/Icon'
 import { ConfirmModal } from '../components/Modal'
 import { AddToSongbookDialog } from '../components/AddToSongbookDialog'
+import { ExportSheetDialog } from '../components/ExportSheetDialog'
 import { ImageSheetPage } from './ImageSheetPage'
 import { ChordChartWorkspace } from '../components/ChordChartWorkspace'
 import { MelodyWorkspace } from '../components/MelodyWorkspace'
@@ -31,6 +31,7 @@ export function SheetPage() {
   const sections = useLiveQuery(() => db.sections.orderBy('order').toArray(), []) ?? []
   const [deleting, setDeleting] = useState(false)
   const [toSongbook, setToSongbook] = useState(false)
+  const [exporting, setExporting] = useState(false)
   const [tagsDraft, setTagsDraft] = useState<string | null>(null)
   const [infoOpen, setInfoOpen] = useSheetInfoOpen()
   const [sourceMode] = useSourcePanel()
@@ -73,9 +74,9 @@ export function SheetPage() {
           <Icon name="book" />
           <span className="hide-narrow">{t('songbook.addTo')}</span>
         </button>
-        <button className="btn" title={t('pdf.exportTitle')} onClick={() => void flushPendingSaves().then(() => navigate(`/sheet/${sheet.id}/pdf`))}>
+        <button className="btn" title={t('exportFile.title')} onClick={() => setExporting(true)}>
           <Icon name="download" />
-          <span className="hide-narrow">{t('pdf.export')}</span>
+          <span className="hide-narrow">{t('exportFile.button')}</span>
         </button>
         <button className="btn btn-ghost btn-icon" aria-label={t('common.delete')} title={t('common.delete')} onClick={() => setDeleting(true)}>
           <Icon name="trash" />
@@ -190,6 +191,7 @@ export function SheetPage() {
       )}
 
       <AddToSongbookDialog open={toSongbook} onClose={() => setToSongbook(false)} sheetId={sheet.id} />
+      <ExportSheetDialog open={exporting} onClose={() => setExporting(false)} fixedId={sheet.id} />
       <ConfirmModal
         open={deleting}
         danger

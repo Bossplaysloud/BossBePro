@@ -2,6 +2,8 @@
 
 弦樂器練習與譜本 PWA。規格見上層的 `開發計畫.md`。
 
+網站：<https://bossplaysloud.github.io/BossBePro/>
+
 ## 開發
 
 ```bash

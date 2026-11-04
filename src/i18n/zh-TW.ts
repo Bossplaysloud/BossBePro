@@ -1,6 +1,6 @@
 const zhTW = {
   app: { name: 'BePro', tagline: '弦樂器練習譜本' },
-  nav: { home: '首頁', library: '譜本', settings: '設定', allSheets: '全部的譜', unsorted: '未分類', sections: '分類', songbooks: '歌本', menu: '選單' },
+  nav: { home: '首頁', library: '譜本', settings: '設定', allSheets: '全部的譜', unsorted: '未分類', sections: '分類', songbooks: '歌本', menu: '選單', hideSidebar: '隱藏側邊欄', showSidebar: '顯示側邊欄' },
   common: {
     cancel: '取消', save: '儲存', delete: '刪除', rename: '重新命名', create: '建立', close: '關閉', confirm: '確定',
     search: '搜尋', back: '返回', edit: '編輯', untitled: '未命名',
@@ -51,6 +51,23 @@ const zhTW = {
     unsorted: '未分類 {{count}} 份 →', sheets: '{{count}} 份譜', showAll: '顯示全部（{{count}}）', showLess: '收起',
     noSheets: '還沒有譜。可以從上面匯入 GP 譜、匯入圖片，或新增一份譜。', noSections: '還沒有分類，可以在左側欄新增。', noSongbooks: '還沒有歌本，可以在左側欄新增。',
     sponsor: '贊助', search: '搜尋譜', today: '今天', sheetsLabel: '份譜', tagline: '匯入、辨識、整理你的譜',
+  },
+  exportFile: {
+    button: '匯出檔案', title: '匯出檔案', change: '換一份譜', toPdf: '前往匯出 PDF', downloadGp: '下載 GP 譜',
+    pdfHint: 'A4 排版，開啟列印視窗後選「另存為 PDF」。所有種類的譜都可以。',
+    gp: 'GP 譜（.gp）', gpHint: 'Guitar Pro 7／8 格式，可以在 Guitar Pro、MuseScore 等軟體繼續編輯。', gpHintNumbered: 'Guitar Pro 7／8 格式；簡譜會以五線譜的形式存入。',
+    gpUnavailable: '{{type}}沒有音符資料，只能匯出 PDF。', gpEmpty: '這份譜還沒有寫入任何音符。', gpSaved: '已下載「{{name}}」', gpFailed: '匯出 GP 譜失敗，請再試一次',
+    noteTitle: '關於 GP 譜檔案',
+    notes: [
+      '存成 Guitar Pro 7／8 的 .gp 格式。可用 Guitar Pro 7、8，MuseScore 4，TuxGuitar 新版開啟；Guitar Pro 5 以前的舊版本打不開。',
+      '會帶入：音符、節奏、調弦、速度、拍號、調號、連結線、推弦／滑音／泛音等技巧。',
+      'BePro 裡的筆記、和弦圖排版、指板設定不會帶入；簡譜會以五線譜的形式存入。',
+    ],
+  },
+  bulk: {
+    move: '移到分類', toSongbook: '加入歌本', choose: '移到這裡', moveTitle: '把 {{count}} 份譜移到…', songbookTitle: '把 {{count}} 份譜加入歌本',
+    createSection: '新增分類並移入', createSongbook: '新增歌本並加入', moved: '已把 {{count}} 份譜移到「{{name}}」', added: '已把 {{count}} 份譜加入「{{name}}」',
+    songbookHint: '會加在歌本的最後面，譜原本的分類不變。',
   },
   multiSelect: {
     start: '選取', done: '完成', count: '已選 {{count}} 份', all: '全選', none: '取消選取',
