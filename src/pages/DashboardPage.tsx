@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import guitarUrl from '../assets/guitar.webp'
 import { BOSS_NOTE } from '../content/bossNote'
 import { db } from '../db/db'
+import { BrandName } from '../components/BrandName'
 import { Icon } from '../components/Icon'
 import { ExportSheetDialog } from '../components/ExportSheetDialog'
 import { NewSheetDialog } from '../components/NewSheetDialog'
@@ -130,7 +131,7 @@ export function DashboardPage() {
         <section className="dash-panel dash-hero">
           <img className="dash-guitar" src={guitarUrl} alt="" aria-hidden="true" draggable={false} />
           <div>
-            <h1 className="dash-display">BossBePro</h1>
+            <h1 className="dash-display"><BrandName /></h1>
             <p className="dash-sub">{t('app.tagline')}<br />{t('dash.tagline')}</p>
           </div>
           <div className="dash-actions">

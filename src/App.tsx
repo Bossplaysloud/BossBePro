@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HashRouter, Link, Route, Routes, useLocation } from 'react-router-dom'
 import { BackupReminder } from './components/BackupReminder'
+import { BrandName } from './components/BrandName'
 import { Icon } from './components/Icon'
 import { Sidebar } from './components/Sidebar'
 import { ToastProvider } from './components/Toast'
@@ -31,7 +32,7 @@ function Shell() {
         </button>
         <Link to="/" className="brand" aria-label={t('nav.home')}>
           <img src="./favicon.svg" alt="" />
-          {t('app.name')}
+          <BrandName />
         </Link>
       </header>
       <div className={`drawer-backdrop${drawer ? ' open' : ''}`} onClick={() => setDrawer(false)} />

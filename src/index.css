@@ -4,6 +4,7 @@
 @import '@fontsource/noto-sans-tc/700.css';
 @import '@fontsource/lexend-exa/latin-200.css';
 @import '@fontsource/lexend-exa/latin-300.css';
+@import '@fontsource/lexend-exa/latin-700.css';
 
 :root {
   /* Latin letters and digits: Calibri, falling back to the metric-compatible Carlito. CJK: Noto Sans TC. */
@@ -827,6 +828,9 @@ textarea.input { border-radius: 18px; }
 .nav-item:hover { background: transparent; box-shadow: var(--inset-sm); }
 .nav-item.active { background: var(--surface); box-shadow: var(--raise-sm); font-weight: 700; }
 .sidebar-footer { border-top: 0; }
+.brand-cap { color: #3d5a3a; font-weight: 700; }
+:root[data-theme='dark'] .brand-cap { color: #c6d3bf; }
+.sidebar .brand > span { letter-spacing: 0.01em; display: inline-block; transform: scaleY(1.25); }
 .sidebar-top { display: flex; align-items: center; gap: 4px; }
 .sidebar-top .brand { flex: 1; min-width: 0; }
 .sidebar-hide { margin-bottom: 12px; color: var(--text-muted); }

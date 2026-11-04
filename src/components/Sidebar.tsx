@@ -6,6 +6,7 @@ import { db, type Section, type Songbook } from '../db/db'
 import { createSection, createSongbook, reorder } from '../db/repo'
 import { useNavGroupOpen, useSidebarHidden } from '../lib/settings'
 import { DeleteGroupsDialog } from './DeleteGroupsDialog'
+import { BrandName } from './BrandName'
 import { Icon } from './Icon'
 import { PromptModal } from './Modal'
 import { SortableList, useSortableItem } from './Sortable'
@@ -101,7 +102,7 @@ export function Sidebar({ open, onNavigate }: { open: boolean; onNavigate: () =>
       <div className="sidebar-top">
         <Link to="/" className="brand" onClick={onNavigate} aria-label={t('nav.home')}>
           <img src="./favicon.svg" alt="" />
-          {t('app.name')}
+          <BrandName />
         </Link>
         <button className="btn btn-ghost btn-icon sidebar-hide" onClick={() => setHidden(true)} aria-label={t('nav.hideSidebar')} title={t('nav.hideSidebar')}>
           <Icon name="sidebar" />
