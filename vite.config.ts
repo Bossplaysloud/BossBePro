@@ -28,7 +28,7 @@ export default defineConfig({
         short_name: 'BossBePro',
         description: 'String instrument practice & score notebook',
         theme_color: '#ffffff',
-        background_color: '#ffffff',
+        background_color: '#ececec',
         display: 'standalone',
         start_url: '.',
         icons: [
