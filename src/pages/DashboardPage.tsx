@@ -51,13 +51,13 @@ function Pills({ items, empty }: { items: { id: string; to: string; name: string
 
 /** The author's note at the bottom, quiet like a watermark: greeting, reminders and links. */
 function BossNote() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   return (
     <aside className="dash-note">
       <h2>{BOSS_NOTE.title}</h2>
-      <p>{BOSS_NOTE.text}</p>
+      <p>{i18n.language.startsWith('zh') ? BOSS_NOTE.text : BOSS_NOTE.textEn}</p>
       <div className="dash-note-links">
-        {BOSS_NOTE.email && <span>email：{BOSS_NOTE.email}</span>}
+        {BOSS_NOTE.email && <span>email{i18n.language.startsWith('zh') ? '：' : ': '}{BOSS_NOTE.email}</span>}
         {BOSS_NOTE.instagram && (
           <a href={BOSS_NOTE.instagram} target="_blank" rel="noreferrer">Instagram @bossplaysloud</a>
         )}

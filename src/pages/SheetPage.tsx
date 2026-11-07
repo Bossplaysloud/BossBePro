@@ -18,7 +18,8 @@ import { TuningPicker } from '../components/TuningPicker'
 import { KEYS } from '../music/chords'
 import { sheetFrets, tuningLabel } from '../music/instruments'
 import { MAX_FRET, MIN_FRETS, TIME_SIGNATURES } from '../music/tab'
-import { useSheetInfoOpen, useSourcePanel } from '../lib/settings'
+import { useIsPhone, useSheetInfoOpen, useSourcePanel } from '../lib/settings'
+import { MoreMenu } from '../components/MoreMenu'
 
 
 export function SheetPage() {
@@ -35,6 +36,7 @@ export function SheetPage() {
   const [tagsDraft, setTagsDraft] = useState<string | null>(null)
   const [infoOpen, setInfoOpen] = useSheetInfoOpen()
   const [sourceMode] = useSourcePanel()
+  const phone = useIsPhone()
 
   if (sheet === undefined) return null
   if (sheet === null)
@@ -70,17 +72,29 @@ export function SheetPage() {
           onBlur={(e) => e.target.value.trim() && e.target.value !== sheet.title && save({ title: e.target.value.trim() })}
           onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
         />
-        <button className="btn" title={t('songbook.addToTitle')} onClick={() => setToSongbook(true)}>
-          <Icon name="book" />
-          <span className="hide-narrow">{t('songbook.addTo')}</span>
-        </button>
-        <button className="btn" title={t('exportFile.title')} onClick={() => setExporting(true)}>
-          <Icon name="download" />
-          <span className="hide-narrow">{t('exportFile.button')}</span>
-        </button>
-        <button className="btn btn-ghost btn-icon" aria-label={t('common.delete')} title={t('common.delete')} onClick={() => setDeleting(true)}>
-          <Icon name="trash" />
-        </button>
+        {phone ? (
+          <MoreMenu
+            items={[
+              { label: t('songbook.addTo'), icon: <Icon name="book" />, onClick: () => setToSongbook(true) },
+              { label: t('exportFile.button'), icon: <Icon name="download" />, onClick: () => setExporting(true) },
+              { label: t('common.delete'), icon: <Icon name="trash" />, danger: true, onClick: () => setDeleting(true) },
+            ]}
+          />
+        ) : (
+          <>
+            <button className="btn" title={t('songbook.addToTitle')} onClick={() => setToSongbook(true)}>
+              <Icon name="book" />
+              <span className="hide-narrow">{t('songbook.addTo')}</span>
+            </button>
+            <button className="btn" title={t('exportFile.title')} onClick={() => setExporting(true)}>
+              <Icon name="download" />
+              <span className="hide-narrow">{t('exportFile.button')}</span>
+            </button>
+            <button className="btn btn-ghost btn-icon" aria-label={t('common.delete')} title={t('common.delete')} onClick={() => setDeleting(true)}>
+              <Icon name="trash" />
+            </button>
+          </>
+        )}
       </div>
 
       <section className="panel details">

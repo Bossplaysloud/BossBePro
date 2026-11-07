@@ -1,4 +1,4 @@
-import { createContext, useContext, useSyncExternalStore } from 'react'
+import { createContext, useContext, useState, useSyncExternalStore } from 'react'
 import { DEFAULT_REMINDER_DAYS } from './backupReminder'
 
 // Per-device UI preferences. Kept in localStorage (not in the backup) and safe when storage is blocked.
@@ -23,6 +23,23 @@ function write(key: string, value: string) {
     memory.set(key, value)
   }
   listeners.forEach((l) => l())
+}
+
+/** Phone-sized screens (the same width where the sidebar becomes a drawer). */
+const PHONE_QUERY = '(max-width: 860px)'
+export function isPhone() {
+  return typeof matchMedia !== 'undefined' && matchMedia(PHONE_QUERY).matches
+}
+export function useIsPhone() {
+  return useSyncExternalStore(
+    (cb) => {
+      if (typeof matchMedia === 'undefined') return () => {}
+      const mq = matchMedia(PHONE_QUERY)
+      mq.addEventListener('change', cb)
+      return () => mq.removeEventListener('change', cb)
+    },
+    isPhone,
+  )
 }
 
 function useKey(key: string) {
@@ -78,13 +95,17 @@ export function useViewMode(): [ViewMode, (v: ViewMode) => void] {
 
 /** Whether the sheet details panel is expanded. Remembered per device. */
 export function useSheetInfoOpen(): [boolean, (open: boolean) => void] {
-  const open = useKey('bepro.sheetInfoOpen') !== '0'
-  return [open, (o) => write('bepro.sheetInfoOpen', o ? '1' : '0')]
+  // Folded each time a sheet opens.
+  return useState(false)
 }
 
 export type SheetMode = 'edit' | 'view'
 export function useSheetMode(): [SheetMode, (m: SheetMode) => void] {
+  const phone = useIsPhone()
   const m: SheetMode = useKey('bepro.sheetMode') === 'view' ? 'view' : 'edit'
+  // Phones open every sheet for reading; editing is a tap away.
+  const [phoneMode, setPhoneMode] = useState<SheetMode>('view')
+  if (phone) return [phoneMode, setPhoneMode]
   return [m, (v) => write('bepro.sheetMode', v)]
 }
 
@@ -172,8 +193,23 @@ export function useKeypad(): [boolean, (on: boolean) => void] {
 }
 
 export function useFretPanelOpen(): [boolean, (open: boolean) => void] {
+  const phone = useIsPhone()
   const open = useKey('bepro.fretPanel') !== '0'
+  // Phones keep their own choice, folded until opened.
+  const phoneOpen = useKey('bepro.fretPanel.phone') === '1'
+  if (phone) return [phoneOpen, (o) => write('bepro.fretPanel.phone', o ? '1' : '0')]
   return [open, (o) => write('bepro.fretPanel', o ? '1' : '0')]
+}
+
+/** Phones: whether the editing tool panel at the bottom is shown (shown unless hidden before). */
+export function useDockOpen(): [boolean, (open: boolean) => void] {
+  const open = useKey('bepro.dockOpen') !== '0'
+  return [open, (o) => write('bepro.dockOpen', o ? '1' : '0')]
+}
+
+/** Phones: the tool panel's last used tab. */
+export function useDockTab(): [string | null, (tab: string) => void] {
+  return [useKey('bepro.dockTab'), (tab) => write('bepro.dockTab', tab)]
 }
 
 /** Active playback sound: 'builtin' or the id of an imported SoundFont asset. */
@@ -198,7 +234,8 @@ export function useCountIn(): [boolean, (on: boolean) => void] {
 export type SourcePanelMode = 'hidden' | 'top' | 'side'
 export function useSourcePanel(): [SourcePanelMode, (m: SourcePanelMode) => void] {
   const raw = useKey('bepro.sourcePanel')
-  const mode: SourcePanelMode = raw === 'hidden' || raw === 'top' ? raw : 'side'
+  // Hidden until shown; then the last choice is remembered.
+  const mode: SourcePanelMode = raw === 'side' || raw === 'top' ? raw : 'hidden'
   return [mode, (m) => write('bepro.sourcePanel', m)]
 }
 

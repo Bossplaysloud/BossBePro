@@ -7,19 +7,22 @@ import { chordDegree, findVoicings, parseChord, transposeKey, voicingLabel, type
 import { noteName, sheetFrets } from '../music/instruments'
 import { useAutosave } from '../lib/useAutosave'
 import { useHistory } from '../lib/useHistory'
-import { useFretLabels, useScoreZoom, useSheetMode, useTwoPage } from '../lib/settings'
+import { useFretLabels, useFretPanelOpen, useIsPhone, useScoreZoom, useSheetMode, useTwoPage } from '../lib/settings'
 import { ChordDiagram } from './ChordDiagram'
 import { ChordDialog } from './ChordDialog'
 import { Fretboard, type FretMark } from './Fretboard'
 import { Icon } from './Icon'
 import { ChartTidyDialog } from './TidyDialog'
 import { useToast } from './Toast'
+import { ToolDock } from './ToolDock'
 
 /** Lyrics with chords: a text editor with live preview, plus fretboard and shapes for the selected chord. */
 export function ChordChartWorkspace({ sheet }: { sheet: Sheet }) {
   const { t } = useTranslation()
   const toast = useToast()
   const [mode, setMode] = useSheetMode()
+  const phone = useIsPhone()
+  const [syntaxOpen, setSyntaxOpen] = useState(false)
   const [initial] = useState<ChordChartContent>(() => (isChordChartContent(sheet.content) ? sheet.content : emptyChordChart()))
   const history = useHistory(initial)
   const content = history.value
@@ -85,6 +88,38 @@ export function ChordChartWorkspace({ sheet }: { sheet: Sheet }) {
 
   const preview = <ChartPreview text={content.text} active={active} onChord={setSelected} large={mode === 'view'} header={status} />
 
+  const keyControls = (
+    <>
+      <div className="row" role="group" aria-label={t('chart.transpose')} style={{ gap: 4 }}>
+        <span className="small muted">{t('chart.transpose')}</span>
+        <button className="btn btn-icon" onClick={() => shift(-1)} aria-label={t('chart.down')} title={t('chart.down')}>−</button>
+        <span className="transpose-amount" aria-live="polite">{transpose > 0 ? `+${transpose}` : transpose < 0 ? `−${-transpose}` : '0'}</span>
+        <button className="btn btn-icon" onClick={() => shift(1)} aria-label={t('chart.up')} title={t('chart.up')}>+</button>
+        {transpose !== 0 && <button className="btn" onClick={() => shift(-transpose)}>{t('chart.reset')}</button>}
+      </div>
+      <label className="row small" style={{ gap: 4 }}>
+        <span className="muted">Capo</span>
+        <select className="select" style={{ width: 'auto', minHeight: 36, padding: '4px 8px' }} value={capo} onChange={(e) => setCapo(Number(e.target.value))}>
+          <option value={0}>{t('chart.noCapo')}</option>
+          {Array.from({ length: 11 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{t('chart.capoN', { n })}</option>)}
+        </select>
+      </label>
+    </>
+  )
+  const undoRedo = (
+    <>
+      <button className="btn btn-icon" onClick={history.undo} disabled={!history.canUndo} aria-label={t('tab.undo')} title={t('tab.undo')}><Icon name="undo" /></button>
+      <button className="btn btn-icon" onClick={history.redo} disabled={!history.canRedo} aria-label={t('tab.redo')} title={t('tab.redo')}><Icon name="redo" /></button>
+    </>
+  )
+  const editTools = (
+    <>
+      <button className="btn" onClick={() => setInserting(true)}>{t('chart.insertChord')}</button>
+      <button className="btn" onClick={convert} title={t('chart.convertHint')}>{t('chart.convert')}</button>
+      <button className="btn" onClick={() => setTidyOpen(true)}>{t('tidy.button')}</button>
+    </>
+  )
+
   return (
     <>
       <div className="mode-bar">
@@ -92,33 +127,18 @@ export function ChordChartWorkspace({ sheet }: { sheet: Sheet }) {
           <button aria-pressed={mode === 'edit'} onClick={() => setMode('edit')}>{t('tab.edit')}</button>
           <button aria-pressed={mode === 'view'} onClick={() => setMode('view')}>{t('tab.view')}</button>
         </div>
-        <span className="spacer" />
-        <div className="row" role="group" aria-label={t('chart.transpose')} style={{ gap: 4 }}>
-          <span className="small muted">{t('chart.transpose')}</span>
-          <button className="btn btn-icon" onClick={() => shift(-1)} aria-label={t('chart.down')} title={t('chart.down')}>−</button>
-          <span className="transpose-amount" aria-live="polite">{transpose > 0 ? `+${transpose}` : transpose < 0 ? `−${-transpose}` : '0'}</span>
-          <button className="btn btn-icon" onClick={() => shift(1)} aria-label={t('chart.up')} title={t('chart.up')}>+</button>
-          {transpose !== 0 && <button className="btn" onClick={() => shift(-transpose)}>{t('chart.reset')}</button>}
-        </div>
-        <label className="row small" style={{ gap: 4 }}>
-          <span className="muted">Capo</span>
-          <select className="select" style={{ width: 'auto', minHeight: 36, padding: '4px 8px' }} value={capo} onChange={(e) => setCapo(Number(e.target.value))}>
-            <option value={0}>{t('chart.noCapo')}</option>
-            {Array.from({ length: 11 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>{t('chart.capoN', { n })}</option>)}
-          </select>
-        </label>
-        <button className="btn btn-icon" onClick={history.undo} disabled={!history.canUndo} aria-label={t('tab.undo')} title={t('tab.undo')}><Icon name="undo" /></button>
-        <button className="btn btn-icon" onClick={history.redo} disabled={!history.canRedo} aria-label={t('tab.redo')} title={t('tab.redo')}><Icon name="redo" /></button>
+        {!phone && (
+          <>
+            <span className="spacer" />
+            {keyControls}
+          </>
+        )}
       </div>
+      {phone && <div className="player-bar player-compact chart-key-bar">{keyControls}</div>}
 
       {mode === 'edit' ? (
         <div className="chart-edit">
           <div className="chart-source">
-            <div className="tab-toolbar">
-              <button className="btn" onClick={() => setInserting(true)}>{t('chart.insertChord')}</button>
-              <button className="btn" onClick={convert} title={t('chart.convertHint')}>{t('chart.convert')}</button>
-              <button className="btn" onClick={() => setTidyOpen(true)}>{t('tidy.button')}</button>
-            </div>
             <textarea
               ref={textRef}
               className="input mono chart-textarea"
@@ -129,12 +149,22 @@ export function ChordChartWorkspace({ sheet }: { sheet: Sheet }) {
               placeholder={t('chart.placeholder')}
               onChange={(e) => setText(e.target.value)}
             />
-            <p className="muted small" style={{ margin: 0 }}>{t('chart.syntax')}</p>
+            {syntaxOpen && <p className="muted small" style={{ margin: 0 }}>{t('chart.syntax')}</p>}
           </div>
           <div className="chart-preview-wrap">{preview}</div>
         </div>
       ) : (
         preview
+      )}
+
+      {mode === 'edit' && (
+        <ToolDock label={t('dock.tools')} openLabel={t('dock.tools')}>
+          <div className="dock-row">
+            {editTools}
+            {undoRedo}
+            <button className="btn btn-icon" aria-pressed={syntaxOpen} onClick={() => setSyntaxOpen(!syntaxOpen)} aria-label={t('dock.syntax')} title={t('dock.syntax')}>?</button>
+          </div>
+        </ToolDock>
       )}
 
       <ChordPanel chords={chords} active={active} onSelect={setSelected} sheet={sheet} capo={capo} flats={/b/.test(soundingKey)} />
@@ -235,6 +265,10 @@ function ChordPanel({ chords, active, onSelect, sheet, capo, flats }: { chords: 
   const { t } = useTranslation()
   const [labels, setLabels] = useFretLabels()
   const [shape, setShape] = useState<Voicing | null>(null)
+  const phone = useIsPhone()
+  const [openSaved, setOpen] = useFretPanelOpen()
+  // Phones fold the panel like the TAB fretboard; wide screens always show it.
+  const open = !phone || openSaved
   const frets = sheetFrets(sheet)
   const chord = active ? parseChord(active) : null
   // Shapes are found as if the capo were the nut; on the fretboard they move up by `capo`.
@@ -272,12 +306,19 @@ function ChordPanel({ chords, active, onSelect, sheet, capo, flats }: { chords: 
           ))}
         </div>
         <span className="spacer" />
-        <div className="segmented" role="group" aria-label={t('fretboard.labels')}>
-          <button aria-pressed={labels === 'degree'} onClick={() => setLabels('degree')}>{t('fretboard.degree')}</button>
-          <button aria-pressed={labels === 'note'} onClick={() => setLabels('note')}>{t('fretboard.note')}</button>
-        </div>
+        {open && (
+          <div className="segmented" role="group" aria-label={t('fretboard.labels')}>
+            <button aria-pressed={labels === 'degree'} onClick={() => setLabels('degree')}>{t('fretboard.degree')}</button>
+            <button aria-pressed={labels === 'note'} onClick={() => setLabels('note')}>{t('fretboard.note')}</button>
+          </div>
+        )}
+        {phone && (
+          <button className="btn btn-ghost btn-icon" onClick={() => setOpen(!open)} aria-expanded={open} aria-label={open ? t('fretboard.hide') : t('fretboard.show')} title={open ? t('fretboard.hide') : t('fretboard.show')}>
+            <span style={{ display: 'flex', transform: open ? 'none' : 'rotate(180deg)' }}><Icon name="chevron" /></span>
+          </button>
+        )}
       </div>
-      {chord ? (
+      {!open ? null : chord ? (
         <>
           <Fretboard tuning={sheet.tuning} frets={frets} marks={marks} capo={capo} />
           <div className="fb-legend row">

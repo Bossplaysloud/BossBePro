@@ -335,7 +335,7 @@ dialog.modal::backdrop { background: var(--overlay); }
 .tab-status { margin-top: 8px; }
 
 .tab-keypad {
-  display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); gap: 4px; margin-top: 10px;
+  display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 4px; margin-top: 10px;
 }
 .tab-keypad button {
   min-height: 40px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
@@ -969,3 +969,90 @@ dialog.modal { border: 0; border-radius: 28px; background: var(--bg); box-shadow
 .choice.disabled { opacity: 0.55; cursor: default; }
 .export-note { padding: 12px 16px; border-radius: 16px; background: color-mix(in srgb, #c6d3bf 45%, var(--surface)); color: var(--text); font-size: 0.88rem; line-height: 1.6; }
 .export-note ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* ---------- phones: "⋯" menus, bottom tool panel, one-line player ---------- */
+.more-menu { position: relative; flex: none; }
+.more-menu > .btn-icon { font-size: 1.15rem; line-height: 1; }
+.more-menu-pop {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 30; min-width: 210px; padding: 6px;
+  display: flex; flex-direction: column; border-radius: 18px; background: var(--bg); box-shadow: var(--shadow);
+}
+.more-menu-pop > button {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 12px;
+  border: 0; border-radius: 12px; background: none; font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.more-menu-pop > button + button { border-top: 1px solid var(--border); border-radius: 0; }
+.more-menu-pop > button:hover { background: var(--surface-hover); }
+.more-menu-pop > button:disabled { opacity: 0.5; cursor: default; }
+.more-menu-pop > button.danger { color: var(--danger); }
+
+.tool-dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; max-height: 58vh; overflow-y: auto;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  border-radius: 22px 22px 0 0; background: var(--bg); box-shadow: 0 -8px 24px rgb(0 0 0 / 0.14);
+}
+.tool-dock-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.tool-dock-status { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tool-dock-close { min-height: 32px !important; padding: 0 12px !important; gap: 2px !important; font-size: 0.85rem; flex: none; }
+.tool-dock-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.tool-dock-tabs button {
+  flex: 1; min-width: 0; padding: 7px 0; border: 0; border-radius: 12px; background: none;
+  font: inherit; font-size: 0.88rem; color: var(--text-muted); cursor: pointer;
+}
+.tool-dock-tabs button[aria-selected='true'] { color: var(--text); font-weight: 700; box-shadow: var(--inset-sm); }
+.tool-dock-body { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.tool-dock-body > .tab-keypad { width: 100%; margin: 0; }
+.dock-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; width: 100%; }
+.dock-row .select { width: auto; min-height: 36px; padding: 4px 8px; }
+.dock-row .select-bar { position: static; width: 100%; margin: 4px 0 0; }
+.dock-row.tab-techniques { margin: 0; }
+.tool-dock-fab {
+  position: fixed; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 20;
+  display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border: 0; border-radius: 999px;
+  background: var(--bg); color: var(--text); font: inherit; font-size: 0.9rem; font-weight: 700;
+  box-shadow: var(--raise-sm), 0 6px 18px rgb(0 0 0 / 0.16); cursor: pointer;
+}
+.tool-dock-fab .muted { font-weight: 400; }
+/* Computers: the panel spans the content area beside the sidebar, its tools lined up with the page */
+@media (min-width: 861px) {
+  .tool-dock { left: var(--sidebar); padding-inline: max(16px, calc((100vw - var(--sidebar) - 1040px) / 2 + 24px)); max-height: 46vh; }
+  body:has(.shell.sidebar-hidden) .tool-dock { left: 0; padding-inline: max(16px, calc((100vw - 1040px) / 2 + 24px)); }
+}
+.tool-dock-fab-icon { display: flex; transform: rotate(180deg); }
+
+/* English tab marks after the Chinese technique names */
+.tech-code { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); letter-spacing: 0.02em; }
+.tech-btn[aria-pressed='true'] .tech-code { color: inherit; }
+
+.player-compact { flex-wrap: nowrap; }
+.player-compact .player-tempo { flex: 1; min-width: 0; }
+.player-compact .player-tempo .input { width: 54px; }
+.player-compact .player-tempo input[type='range'] { flex: 1; min-width: 40px; width: auto; }
+.player-options .more-menu-pop { width: min(320px, calc(100vw - 40px)); padding: 14px; }
+.player-options-body { display: flex; flex-direction: column; gap: 10px; }
+.player-options-body .row { flex-wrap: wrap; gap: 6px; }
+
+@media (max-width: 860px) {
+  .tech-btn kbd { display: none; }
+  .page-header { flex-wrap: nowrap; gap: 8px; margin-bottom: 12px; }
+  .page-header .input { min-width: 0; font-size: 1.2rem !important; }
+  .panel.details { padding: 12px 16px; }
+  .panel.details .field-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .mode-bar { margin: 12px 0 10px; }
+}
+@media print { .tool-dock, .tool-dock-fab, .more-menu { display: none !important; } }
+.page::after { content: ''; display: block; height: var(--dock-space, 0px); }
+.tool-dock-body { align-content: flex-start; }
+.tool-dock-body.single { flex-wrap: nowrap; }
+.tool-dock-body.single > .dock-row { flex: 1; width: auto; min-width: 0; flex-wrap: nowrap; overflow-x: auto; padding: 4px 2px; }
+.tool-dock-body.single .btn { flex: none; }
+.chart-key-bar { gap: 10px; }
+.dock-stack { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.dock-stack .notes-text { min-height: 96px; }
+.placing-bar {
+  position: fixed; left: 12px; right: 12px; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 20;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px 10px 18px;
+  border-radius: 18px; background: var(--text); color: var(--bg); box-shadow: var(--shadow); font-size: 0.9rem;
+}
+.placing-bar .btn { min-height: 34px; color: var(--text); background: var(--bg); }
+@media print { .placing-bar { display: none !important; } }

@@ -42,6 +42,7 @@ import { Modal } from './Modal'
 import { TextTabDialog } from './TextTabDialog'
 import { TidyDialog } from './TidyDialog'
 import { useToast } from './Toast'
+import { ToolDock } from './ToolDock'
 
 interface Props {
   content: TabContent
@@ -71,6 +72,15 @@ type Technique =
   | 'palmMute' | 'dead' | 'vibrato' | 'letRing' | 'ghost' | 'tap' | 'tie' | 'tuplet'
 
 /** Keyboard letter for each technique (also shown on the buttons and in the help dialog). */
+/** Highest fret that can be typed (two digits); the fretboard still draws only the sheet's frets. */
+const MAX_ENTRY_FRET = 99
+
+/** The usual English tab marks, shown after the Chinese labels. */
+const TECHNIQUE_CODES: Record<Technique, string> = {
+  hammer: 'H', pull: 'P', slide: 'SL', slideIn: 'SL-in', slideOut: 'SL-out', bend: 'B', release: 'R', natural: 'NH', artificial: 'AH',
+  palmMute: '', dead: '', vibrato: '~', letRing: 'LR', ghost: '( )', tap: 'T', tie: 'Tie', tuplet: '3',
+}
+
 export const TECHNIQUE_KEYS: Record<Technique, string> = {
   hammer: 'H', pull: 'P', slide: '/', slideIn: 'I', slideOut: 'O', bend: 'B', release: 'R', natural: 'N', artificial: 'A',
   palmMute: 'M', dead: 'X', vibrato: 'V', letRing: 'L', ghost: 'G', tap: 'K', tie: 'T', tuplet: 'U',
@@ -118,7 +128,7 @@ function cellParts(n: TabNote): { pre: string; main: string; post: string } {
 }
 
 export function TabEditor({ content, onChange, cursor, setCursor, playing, tuning, frets, timeSignature, undo, redo, canUndo, canRedo }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const toast = useToast()
   const strings = tuning.length
   const [keypad, setKeypad] = useKeypad()
@@ -161,18 +171,18 @@ export function TabEditor({ content, onChange, cursor, setCursor, playing, tunin
     const last = lastDigit.current
     let value = d
     // A second digit typed quickly on the same cell makes a two-digit fret (e.g. 1 then 2 → 12).
-    if (last && last.key === cursorKey && now - last.at < TWO_DIGIT_MS && last.value > 0 && last.value * 10 + d <= frets) {
+    if (last && last.key === cursorKey && now - last.at < TWO_DIGIT_MS && last.value > 0 && last.value * 10 + d <= MAX_ENTRY_FRET) {
       value = last.value * 10 + d
       lastDigit.current = null
     } else {
       lastDigit.current = { at: now, key: cursorKey, value: d }
     }
-    onChange((c) => setNote(c, cursor, value, frets))
+    onChange((c) => setNote(c, cursor, value, MAX_ENTRY_FRET))
   }
 
   const enterFret = (f: number | 'x' | null) => {
     lastDigit.current = null
-    onChange((c) => setNote(c, cursor, f, frets))
+    onChange((c) => setNote(c, cursor, f, MAX_ENTRY_FRET))
   }
 
   const applyTechnique = (tech: Technique) => {
@@ -321,80 +331,114 @@ export function TabEditor({ content, onChange, cursor, setCursor, playing, tunin
     return { ...cursor, m: mm, b: Math.min(cursor.b, c.measures[mm].beats.length - 1) }
   }
 
-  return (
-    <div className="tab-editor">
-      <div className="tab-toolbar" role="toolbar" aria-label={t('tab.toolbar')}>
-        <div className="segmented" role="group" aria-label={t('tab.duration')}>
-          {DURATIONS.map((d) => (
-            <button key={d} aria-pressed={beat?.duration === d} onClick={() => onChange((c) => setDuration(c, cursor.m, cursor.b, d))} title={t('tab.duration')}>
-              {DURATION_LABEL[d]}
-            </button>
-          ))}
-        </div>
-        <button className="btn" aria-pressed={!!beat?.dotted} onClick={() => onChange((c) => toggleDot(c, cursor.m, cursor.b))} title={`${t('tab.dot')} (.)`}>
-          {t('tab.dot')}
-        </button>
-        <span className="tab-toolbar-sep" />
-        <button className="btn" onClick={addBeat} title={`${t('tab.addBeat')} (Enter)`}>+ {t('tab.beat')}</button>
-        <button className="btn" onClick={removeBeat}>− {t('tab.beat')}</button>
-        <button className="btn" onClick={() => onChange((c) => clearBeat(c, cursor.m, cursor.b))}>{t('tab.clearBeat')}</button>
-        <span className="tab-toolbar-sep" />
-        <button className="btn" onClick={addMeasure}>+ {t('tab.measure')}</button>
-        <button className="btn" onClick={removeMeasure}>− {t('tab.measure')}</button>
-        <select
-          className="select"
-          aria-label={t('tab.measureTs')}
-          title={t('tab.measureTs')}
-          value={content.measures[cursor.m]?.timeSignature?.join('/') ?? ''}
-          onChange={(e) => {
-            const v = e.target.value
-            onChange((c) => setMeasureTs(c, cursor.m, v ? (v.split('/').map(Number) as [number, number]) : null, timeSignature))
-          }}
-        >
-          <option value="">{t('tab.tsInherit', { ts: tsAt({ ...content, measures: content.measures.slice(0, cursor.m) }, cursor.m - 1, timeSignature).join('/') })}</option>
-          {TIME_SIGNATURES.map((x) => (
-            <option key={x} value={x}>{t('tab.tsChange', { ts: x })}</option>
-          ))}
-        </select>
-        <button className="btn" onClick={() => setChordBeat({ m: cursor.m, b: cursor.b })} title={`${t('chord.title')} (C)`}>
-          {t('chord.button')}{beat?.chord ? `：${beat.chord}` : ''}
-        </button>
-        <button className="btn" onClick={() => setFitMeasure(cursor.m)} title={`${t('fit.title')} (F)`}>{t('fit.button')}</button>
-        <span className="spacer" />
-        <button className="btn btn-icon" onClick={undo} disabled={!canUndo} title={`${t('tab.undo')} (⌘Z)`} aria-label={t('tab.undo')}>
-          <Icon name="undo" />
-        </button>
-        <button className="btn btn-icon" onClick={redo} disabled={!canRedo} title={`${t('tab.redo')} (⇧⌘Z)`} aria-label={t('tab.redo')}>
-          <Icon name="redo" />
-        </button>
-        <button className="btn" onClick={() => setTidyOpen(true)} title={t('tidy.title')}>{t('tidy.button')}</button>
-        <button className="btn" onClick={() => setTextOpen(true)}>{t('textTab.button')}</button>
-        <button className="btn" onClick={() => setHelp(true)} title="?">{t('tab.shortcutsButton')}</button>
-        <button className="btn" aria-pressed={keypad} onClick={() => setKeypad(!keypad)}>{t('tab.keypad')}</button>
-      </div>
-
-      <SelectionBar sel={sel} />
-
-      <div className="tab-techniques" role="toolbar" aria-label={t('tech.title')}>
-        {TECHNIQUES.map((tech) => (
-          <button
-            key={tech}
-            className="btn tech-btn"
-            aria-pressed={isOn(tech, note, beat?.tuplet)}
-            onClick={() => {
-              applyTechnique(tech)
-              focusSheet()
-            }}
-            title={`${t(`tech.${tech}`)} (${TECHNIQUE_KEYS[tech]})`}
-          >
-            {t(`tech.${tech}Short`)}
-            {tech === 'bend' && note?.bend ? ` ${BEND_LABEL[note.bend]}` : ''}
-            {tech === 'tuplet' && beat?.tuplet ? ` ${beat.tuplet}` : ''}
-            <kbd>{TECHNIQUE_KEYS[tech]}</kbd>
+  const durationGroup = (
+    <>
+      <div className="segmented" role="group" aria-label={t('tab.duration')}>
+        {DURATIONS.map((d) => (
+          <button key={d} aria-pressed={beat?.duration === d} onClick={() => onChange((c) => setDuration(c, cursor.m, cursor.b, d))} title={t('tab.duration')}>
+            {DURATION_LABEL[d]}
           </button>
         ))}
       </div>
+      <button className="btn" aria-pressed={!!beat?.dotted} onClick={() => onChange((c) => toggleDot(c, cursor.m, cursor.b))} title={`${t('tab.dot')} (.)`}>
+        {t('tab.dot')}
+      </button>
+    </>
+  )
+  const beatGroup = (
+    <>
+      <button className="btn" onClick={addBeat} title={`${t('tab.addBeat')} (Enter)`}>+ {t('tab.beat')}</button>
+      <button className="btn" onClick={removeBeat}>− {t('tab.beat')}</button>
+      <button className="btn" onClick={() => onChange((c) => clearBeat(c, cursor.m, cursor.b))}>{t('tab.clearBeat')}</button>
+    </>
+  )
+  const measureGroup = (
+    <>
+      <button className="btn" onClick={addMeasure}>+ {t('tab.measure')}</button>
+      <button className="btn" onClick={removeMeasure}>− {t('tab.measure')}</button>
+      <select
+        className="select"
+        aria-label={t('tab.measureTs')}
+        title={t('tab.measureTs')}
+        value={content.measures[cursor.m]?.timeSignature?.join('/') ?? ''}
+        onChange={(e) => {
+          const v = e.target.value
+          onChange((c) => setMeasureTs(c, cursor.m, v ? (v.split('/').map(Number) as [number, number]) : null, timeSignature))
+        }}
+      >
+        <option value="">{t('tab.tsInherit', { ts: tsAt({ ...content, measures: content.measures.slice(0, cursor.m) }, cursor.m - 1, timeSignature).join('/') })}</option>
+        {TIME_SIGNATURES.map((x) => (
+          <option key={x} value={x}>{t('tab.tsChange', { ts: x })}</option>
+        ))}
+      </select>
+    </>
+  )
+  const chordButton = (
+    <button className="btn" onClick={() => setChordBeat({ m: cursor.m, b: cursor.b })} title={`${t('chord.title')} (C)`}>
+      {t('chord.button')}{beat?.chord ? `：${beat.chord}` : ''}
+    </button>
+  )
+  const fitButton = <button className="btn" onClick={() => setFitMeasure(cursor.m)} title={`${t('fit.title')} (F)`}>{t('fit.button')}</button>
+  const undoRedo = (
+    <>
+      <button className="btn btn-icon" onClick={undo} disabled={!canUndo} title={`${t('tab.undo')} (⌘Z)`} aria-label={t('tab.undo')}>
+        <Icon name="undo" />
+      </button>
+      <button className="btn btn-icon" onClick={redo} disabled={!canRedo} title={`${t('tab.redo')} (⇧⌘Z)`} aria-label={t('tab.redo')}>
+        <Icon name="redo" />
+      </button>
+    </>
+  )
+  const moreGroup = (
+    <>
+      <button className="btn" onClick={() => setTidyOpen(true)} title={t('tidy.title')}>{t('tidy.button')}</button>
+      <button className="btn" onClick={() => setTextOpen(true)}>{t('textTab.button')}</button>
+      <button className="btn" onClick={() => setHelp(true)} title="?">{t('tab.shortcutsButton')}</button>
+    </>
+  )
+  // Chinese labels also show the usual English tab marks (H, P, SL…) that many players read.
+  const showCodes = i18n.language.startsWith('zh')
+  const techButton = (tech: Technique) => (
+    <button
+      key={tech}
+      className="btn tech-btn"
+      aria-pressed={isOn(tech, note, beat?.tuplet)}
+      onClick={() => {
+        applyTechnique(tech)
+        focusSheet()
+      }}
+      title={`${t(`tech.${tech}`)} (${TECHNIQUE_KEYS[tech]})`}
+    >
+      {t(`tech.${tech}Short`)}
+      {tech === 'bend' && note?.bend ? ` ${BEND_LABEL[note.bend]}` : ''}
+      {tech === 'tuplet' && beat?.tuplet ? ` ${beat.tuplet}` : ''}
+      {showCodes && TECHNIQUE_CODES[tech] && <span className="tech-code">{TECHNIQUE_CODES[tech]}</span>}
+      <kbd>{TECHNIQUE_KEYS[tech]}</kbd>
+    </button>
+  )
+  const status = (
+    <>
+      {t('tab.position', { m: cursor.m + 1, b: cursor.b + 1, s: cursor.s, note: noteName(tuning[cursor.s - 1] ?? 0) })}
+      {note && !note.dead && ` · ${noteName((tuning[cursor.s - 1] ?? 0) + note.fret, true)}`}
+      <span className="tab-hint"> · {t('tab.helpHint')}</span>
+    </>
+  )
+  const keypadEl = (
+    <div className="tab-keypad" role="group" aria-label={t('tab.keypad')}>
+      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map((d) => (
+        <button key={d} onClick={() => enterDigit(d)}>{d}</button>
+      ))}
+      <button onClick={() => move(-1)} aria-label="←">←</button>
+      <button onClick={() => setCursor({ ...cursor, s: Math.max(1, cursor.s - 1) })} aria-label="↑">↑</button>
+      <button onClick={() => setCursor({ ...cursor, s: Math.min(strings, cursor.s + 1) })} aria-label="↓">↓</button>
+      <button onClick={() => move(1)} aria-label="→">→</button>
+      <button onClick={addBeat} aria-label={t('tab.addBeat')}>↵</button>
+      <button onClick={() => enterFret(null)} aria-label={t('tab.clearNote')}>⌫</button>
+    </div>
+  )
 
+  return (
+    <div className="tab-editor">
       <div ref={rootRef} className="tab-sheet" tabIndex={0} onKeyDown={onKeyDown} aria-label={t('tab.editorLabel')}>
         {content.measures.map((measure, m) => {
           const fill = measure.free ? 0 : measureFill(measure, tsAt(content, m, timeSignature))
@@ -471,25 +515,30 @@ export function TabEditor({ content, onChange, cursor, setCursor, playing, tunin
         })}
       </div>
 
-      <div className="tab-status muted small">
-        {t('tab.position', { m: cursor.m + 1, b: cursor.b + 1, s: cursor.s, note: noteName(tuning[cursor.s - 1] ?? 0) })}
-        {note && !note.dead && ` · ${noteName((tuning[cursor.s - 1] ?? 0) + note.fret, true)}`}
-        <span className="tab-hint"> · {t('tab.helpHint')}</span>
-      </div>
-
-      {keypad && (
-        <div className="tab-keypad" role="group" aria-label={t('tab.keypad')}>
-          {Array.from({ length: frets + 1 }, (_, f) => (
-            <button key={f} className={note && !note.dead && note.fret === f ? 'on' : ''} onClick={() => enterFret(f)}>{f}</button>
-          ))}
-          <button onClick={() => enterFret(null)} aria-label={t('tab.clearNote')}>⌫</button>
-          <button onClick={() => move(-1)} aria-label="←">←</button>
-          <button onClick={() => setCursor({ ...cursor, s: Math.max(1, cursor.s - 1) })} aria-label="↑">↑</button>
-          <button onClick={() => setCursor({ ...cursor, s: Math.min(strings, cursor.s + 1) })} aria-label="↓">↓</button>
-          <button onClick={() => move(1)} aria-label="→">→</button>
-          <button onClick={addBeat} aria-label={t('tab.addBeat')}>↵</button>
-        </div>
-      )}
+      <ToolDock
+          label={t('dock.tools')}
+          openLabel={t('dock.tools')}
+          status={status}
+          tabs={[
+            { id: 'keys', label: t('dock.keys'), content: keypadEl },
+            { id: 'duration', label: t('dock.duration'), content: <div className="dock-row">{durationGroup}{techButton('tuplet')}</div> },
+            { id: 'tech', label: t('dock.tech'), content: <div className="tab-techniques dock-row">{TECHNIQUES.filter((x) => x !== 'tuplet').map(techButton)}</div> },
+            {
+              id: 'measure',
+              label: t('dock.measure'),
+              content: (
+                <div className="dock-row">
+                  {beatGroup}
+                  {measureGroup}
+                  {fitButton}
+                  {undoRedo}
+                  <SelectionBar sel={sel} />
+                </div>
+              ),
+            },
+            { id: 'more', label: t('dock.more'), content: <div className="dock-row">{chordButton}{moreGroup}</div> },
+          ]}
+        />
 
       <Modal open={help} onClose={() => setHelp(false)} title={t('tab.shortcutsTitle')} actions={<button className="btn btn-primary" onClick={() => setHelp(false)}>{t('common.close')}</button>}>
         <table className="shortcut-table">

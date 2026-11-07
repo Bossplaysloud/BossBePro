@@ -7,7 +7,7 @@ const en: Shape<typeof zhTW> = {
   nav: { home: 'Home', library: 'Library', settings: 'Settings', allSheets: 'All sheets', unsorted: 'Unsorted', sections: 'Sections', songbooks: 'Songbooks', menu: 'Menu', hideSidebar: 'Hide sidebar', showSidebar: 'Show sidebar' },
   common: {
     cancel: 'Cancel', save: 'Save', delete: 'Delete', rename: 'Rename', create: 'Create', close: 'Close', confirm: 'OK',
-    search: 'Search', back: 'Back', edit: 'Edit', untitled: 'Untitled',
+    search: 'Search', back: 'Back', edit: 'Edit', untitled: 'Untitled', more: 'More',
   },
   manage: {
     manage: 'Manage', done: 'Done', selectAll: 'Select all', deleteSelected: 'Delete selected ({{count}})', hint: 'Tick the sections or songbooks to delete',
@@ -101,6 +101,11 @@ const en: Shape<typeof zhTW> = {
     shortcutsButton: 'Shortcuts', shortcutsTitle: 'Keyboard shortcuts', helpHint: 'press ? for all shortcuts',
     keyboardDetected: 'Hardware keyboard detected, on-screen keypad hidden (you can turn it back on)',
   },
+  dock: {
+    tools: 'Tools', hide: 'Hide', keys: 'Keys', duration: 'Duration', tech: 'Techniques', measure: 'Measure', more: 'More',
+    notes: 'Notes', stickies: 'Stickies', syntax: 'Syntax', placing: 'Tap the picture to place a sticky', stickyCount: '{{count}} so far',
+    color: 'Color', size: 'Size', toRecognize: 'Recognize into an editable sheet', infoImage: 'Picture sheet · {{count}} pages',
+  },
   tech: {
     title: 'Techniques', needNote: 'Enter a note in this cell first', noTieSource: 'No note on this string in the previous beat to tie from',
     hammer: 'Hammer-on', hammerShort: 'H', pull: 'Pull-off', pullShort: 'P', slide: 'Slide (to next note)', slideShort: 'Slide',
@@ -135,6 +140,7 @@ const en: Shape<typeof zhTW> = {
     unfree: 'Unmark free bar', unfreeDesc: 'Checks the bar length again.', freeBadge: 'free',
   },
   player: {
+    options: 'Playback options',
     pin: 'Pin to top', pinHint: 'Keep the player at the top of the screen while scrolling, to play or pause any time',
     title: 'Playback', play: 'Play', pause: 'Pause', stop: 'Stop', loading: 'Loading sounds…', soundMissing: 'Sound file missing; choose a sound in Settings',
     bpm: 'Tempo BPM', speed: 'Playback speed', resetSpeed: 'Back to 100%', metronome: 'Metronome', countIn: 'Count-in', countInHint: 'Count one bar before playing',

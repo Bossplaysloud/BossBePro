@@ -1,5 +1,6 @@
 // Measures, beats and durations shared by every notation (TAB, staff, numbered).
 // Content is generic over its note type; only notes differ between notations.
+import { randomId } from '../lib/uuid'
 
 export type Duration = 1 | 2 | 4 | 8 | 16 | 32
 export const DURATIONS: Duration[] = [1, 2, 4, 8, 16, 32]
@@ -53,7 +54,7 @@ export interface Cursor {
 }
 
 export const WHOLE = 3840 // ticks
-export const uid = () => crypto.randomUUID()
+export const uid = () => randomId()
 
 const TUPLET_RATIO: Record<Tuplet, number> = { 3: 2 / 3, 5: 4 / 5, 6: 4 / 6 }
 

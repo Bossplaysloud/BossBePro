@@ -3,8 +3,9 @@ import { useTranslation } from 'react-i18next'
 import type { AlphaTabApi } from '@coderline/alphatab'
 import { PROGRAMS } from '../music/instruments'
 import { setCountIn as setPlayerCountIn, setLoop as setPlayerLoop, setMetronome as setPlayerMetronome, setSpeed as setPlayerSpeed } from '../lib/player'
-import { useCountIn, useMetronome, usePlayerPinned } from '../lib/settings'
+import { useCountIn, useIsPhone, useMetronome, usePlayerPinned } from '../lib/settings'
 import { Icon } from './Icon'
+import { MoreMenu } from './MoreMenu'
 import type { PlayerStatus } from './ScoreView'
 import { useToast } from './Toast'
 
@@ -37,6 +38,7 @@ function clock(ms: number) {
 export function PlayerBar({ api, status, midiVersion, tempo, program, onProgram, measures, range, onPlay, onStop }: Props) {
   const { t } = useTranslation()
   const [pinned, setPinned] = usePlayerPinned()
+  const phone = useIsPhone()
   const toast = useToast()
   const [speed, setSpeed] = useState(1)
   const [metronome, setMetronome] = useMetronome()
@@ -85,49 +87,37 @@ export function PlayerBar({ api, status, midiVersion, tempo, program, onProgram,
     onPlay()
   }
 
-  return (
-    <div className={`player-bar${pinned ? ' pinned' : ''}`} role="group" aria-label={t('player.title')}>
-      <button className="btn btn-primary player-play" onClick={play} disabled={!status.ready} aria-label={status.playing ? t('player.pause') : t('player.play')} title={`${status.playing ? t('player.pause') : t('player.play')} (Shift+Space)`}>
-        <Icon name={status.playing ? 'pause' : 'play'} />
-      </button>
-      <button className="btn btn-icon" onClick={onStop} disabled={!status.ready} aria-label={t('player.stop')} title={t('player.stop')}>
-        <Icon name="stop" />
-      </button>
-      <span className="player-time small muted">{status.ready ? `${clock(status.time)} / ${clock(status.end)}` : status.error ? t('player.soundMissing') : t('player.loading')}</span>
-
-      <span className="tab-toolbar-sep" />
-
-      <div className="player-tempo">
-        <button className="btn btn-icon" onClick={() => setBpm(bpm - 5)} aria-label="−5 BPM">−</button>
-        <label className="row small" style={{ gap: 4 }}>
-          ♩=
-          <input
-            key={bpm}
-            className="input"
-            type="number"
-            min={Math.round(tempo * MIN_SPEED)}
-            max={Math.round(tempo * MAX_SPEED)}
-            defaultValue={bpm}
-            aria-label={t('player.bpm')}
-            onBlur={(e) => setBpm(Number(e.target.value))}
-            onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-          />
-        </label>
-        <button className="btn btn-icon" onClick={() => setBpm(bpm + 5)} aria-label="+5 BPM">+</button>
-        <input
-          type="range"
-          min={MIN_SPEED * 100}
-          max={MAX_SPEED * 100}
-          step={5}
-          value={Math.round(speed * 100)}
-          onChange={(e) => setSpeed(Number(e.target.value) / 100)}
-          aria-label={t('player.speed')}
-        />
-        <button className="btn speed-label" onClick={() => setSpeed(1)} title={t('player.resetSpeed')}>{Math.round(speed * 100)}%</button>
-      </div>
-
-      <span className="tab-toolbar-sep" />
-
+  const timeEl = <span className="player-time small muted">{status.ready ? `${clock(status.time)} / ${clock(status.end)}` : status.error ? t('player.soundMissing') : t('player.loading')}</span>
+  const bpmInput = (
+    <label className="row small" style={{ gap: 4 }}>
+      ♩=
+      <input
+        key={bpm}
+        className="input"
+        type="number"
+        min={Math.round(tempo * MIN_SPEED)}
+        max={Math.round(tempo * MAX_SPEED)}
+        defaultValue={bpm}
+        aria-label={t('player.bpm')}
+        onBlur={(e) => setBpm(Number(e.target.value))}
+        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+      />
+    </label>
+  )
+  const slider = (
+    <input
+      type="range"
+      min={MIN_SPEED * 100}
+      max={MAX_SPEED * 100}
+      step={5}
+      value={Math.round(speed * 100)}
+      onChange={(e) => setSpeed(Number(e.target.value) / 100)}
+      aria-label={t('player.speed')}
+    />
+  )
+  const speedButton = <button className="btn speed-label" onClick={() => setSpeed(1)} title={t('player.resetSpeed')}>{Math.round(speed * 100)}%</button>
+  const options = (
+    <>
       <button className="btn" aria-pressed={metronome} onClick={() => setMetronome(!metronome)}>{t('player.metronome')}</button>
       <button className="btn" aria-pressed={countIn} onClick={() => setCountIn(!countIn)} title={t('player.countInHint')}>{t('player.countIn')}</button>
       <button className="btn" aria-pressed={loop} onClick={toggleLoop} title={t('player.loopHint')}>{t('player.loop')}</button>
@@ -147,12 +137,65 @@ export function PlayerBar({ api, status, midiVersion, tempo, program, onProgram,
       <select className="select" value={program} onChange={(e) => onProgram(Number(e.target.value))} aria-label={t('player.sound')} title={t('player.sound')}>
         {PROGRAMS.map((p) => <option key={p} value={p}>{t(`program.${p}`)}</option>)}
       </select>
+    </>
+  )
+  const pinToggle = (
+    <label className="pin-toggle" title={t('player.pinHint')}>
+      <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} />
+      {t('player.pin')}
+    </label>
+  )
+  const transport = (
+    <>
+      <button className="btn btn-primary player-play" onClick={play} disabled={!status.ready} aria-label={status.playing ? t('player.pause') : t('player.play')} title={`${status.playing ? t('player.pause') : t('player.play')} (Shift+Space)`}>
+        <Icon name={status.playing ? 'pause' : 'play'} />
+      </button>
+      <button className="btn btn-icon" onClick={onStop} disabled={!status.ready} aria-label={t('player.stop')} title={t('player.stop')}>
+        <Icon name="stop" />
+      </button>
+    </>
+  )
+
+  // Phones: one line (play, stop, tempo, speed) and the rest behind "⋯".
+  if (phone)
+    return (
+      <div className={`player-bar player-compact${pinned ? ' pinned' : ''}`} role="group" aria-label={t('player.title')}>
+        {transport}
+        <div className="player-tempo">
+          {bpmInput}
+          {slider}
+        </div>
+        <MoreMenu label={t('player.options')} className="player-options">
+          <div className="player-options-body">
+            <div className="row">{timeEl}{speedButton}</div>
+            <div className="row">{options}</div>
+            {pinToggle}
+          </div>
+        </MoreMenu>
+      </div>
+    )
+
+  return (
+    <div className={`player-bar${pinned ? ' pinned' : ''}`} role="group" aria-label={t('player.title')}>
+      {transport}
+      {timeEl}
+
+      <span className="tab-toolbar-sep" />
+
+      <div className="player-tempo">
+        <button className="btn btn-icon" onClick={() => setBpm(bpm - 5)} aria-label="−5 BPM">−</button>
+        {bpmInput}
+        <button className="btn btn-icon" onClick={() => setBpm(bpm + 5)} aria-label="+5 BPM">+</button>
+        {slider}
+        {speedButton}
+      </div>
+
+      <span className="tab-toolbar-sep" />
+
+      {options}
 
       <span className="spacer" />
-      <label className="pin-toggle" title={t('player.pinHint')}>
-        <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} />
-        {t('player.pin')}
-      </label>
+      {pinToggle}
     </div>
   )
 }

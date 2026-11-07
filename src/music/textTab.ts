@@ -11,8 +11,9 @@
 
 import { noteName } from './instruments'
 import { beatTicks, measureCapacity, previousNote, splitTicks, type TabBeat, type TabContent, type TabMeasure, type TabNote } from './tab'
+import { randomId } from '../lib/uuid'
 
-const uid = () => crypto.randomUUID()
+const uid = () => randomId()
 
 // ---------- serialize ----------
 

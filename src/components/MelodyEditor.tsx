@@ -44,6 +44,7 @@ import { Modal } from './Modal'
 import { TidyDialog } from './TidyDialog'
 import { DURATION_LABEL } from './TabEditor'
 import { useToast } from './Toast'
+import { ToolDock } from './ToolDock'
 
 const SUPERSCRIPT: Record<number, string> = { 3: '³', 5: '⁵', 6: '⁶' }
 const LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B']
@@ -226,60 +227,84 @@ export function MelodyEditor(props: Props) {
     ? `${label(note.midi, note.spelling)}${notation === 'numbered' ? (() => { const g = toNumbered(note.midi, base, note.spelling); return `（${g.accidental}${g.digit}）` })() : ''}`
     : t('melody.rest')
 
+  const durationGroup = (
+    <>
+      <div className="segmented" role="group" aria-label={t('tab.duration')}>
+        {DURATIONS.map((d) => (
+          <button key={d} aria-pressed={beat?.duration === d} onClick={() => onChange((c) => setDuration(c, cursor.m, cursor.b, d))}>
+            {DURATION_LABEL[d]}
+          </button>
+        ))}
+      </div>
+      <button className="btn" aria-pressed={!!beat?.dotted} onClick={() => onChange((c) => toggleDot(c, cursor.m, cursor.b))} title={`${t('tab.dot')} (.)`}>{t('tab.dot')}</button>
+      <button className="btn" aria-pressed={!!beat?.tuplet} onClick={() => onChange((c) => cycleTuplet(c, cursor.m, cursor.b))} title={`${t('tech.tuplet')} (U)`}>
+        {t('tech.tupletShort')}{beat?.tuplet ? ` ${beat.tuplet}` : ''}
+      </button>
+      <button className="btn" aria-pressed={!!note?.tie} onClick={tie} title={`${t('tech.tie')} (T)`}>{t('tech.tieShort')}</button>
+    </>
+  )
+  const beatGroup = (
+    <>
+      <button className="btn" onClick={addBeat} title={`${t('tab.addBeat')} (Enter)`}>+ {t('tab.beat')}</button>
+      <button className="btn" onClick={removeBeat}>− {t('tab.beat')}</button>
+      <button className="btn" onClick={() => onChange((c) => clearBeat(c, cursor.m, cursor.b))}>{t('tab.clearBeat')}</button>
+      <button className="btn" onClick={addMeasure}>+ {t('tab.measure')}</button>
+      <button className="btn" onClick={removeMeasure}>− {t('tab.measure')}</button>
+      <select
+        className="select"
+        aria-label={t('tab.measureTs')}
+        title={t('tab.measureTs')}
+        value={content.measures[cursor.m]?.timeSignature?.join('/') ?? ''}
+        onChange={(e) => {
+          const v = e.target.value
+          onChange((c) => setMeasureTs(c, cursor.m, v ? (v.split('/').map(Number) as [number, number]) : null, timeSignature))
+        }}
+      >
+        <option value="">{t('tab.tsInherit', { ts: tsAt({ ...content, measures: content.measures.slice(0, cursor.m) }, cursor.m - 1, timeSignature).join('/') })}</option>
+        {TIME_SIGNATURES.map((x) => <option key={x} value={x}>{t('tab.tsChange', { ts: x })}</option>)}
+      </select>
+    </>
+  )
+  const chordButton = (
+    <button className="btn" onClick={() => setChordBeat({ m: cursor.m, b: cursor.b })} title={`${t('chord.title')} (${notation === 'staff' ? '⇧C' : 'C'})`}>
+      {t('chord.button')}{beat?.chord ? `：${beat.chord}` : ''}
+    </button>
+  )
+  const lyricButton = <button className="btn" onClick={() => setLyricOpen(true)} title={`${t('melody.lyric')} (${notation === 'staff' ? '⇧L' : 'L'})`}>{t('melody.lyric')}</button>
+  const fitButton = <button className="btn" onClick={() => setFitMeasure(cursor.m)} title={`${t('fit.title')} (${notation === 'staff' ? '⇧F' : 'F'})`}>{t('fit.button')}</button>
+  const undoRedo = (
+    <>
+      <button className="btn btn-icon" onClick={undo} disabled={!canUndo} aria-label={t('tab.undo')} title={`${t('tab.undo')} (⌘Z)`}><Icon name="undo" /></button>
+      <button className="btn btn-icon" onClick={redo} disabled={!canRedo} aria-label={t('tab.redo')} title={`${t('tab.redo')} (⇧⌘Z)`}><Icon name="redo" /></button>
+    </>
+  )
+  const tidyButton = <button className="btn" onClick={() => setTidyOpen(true)} title={t('tidy.title')}>{t('tidy.button')}</button>
+  const helpButton = <button className="btn" onClick={() => setHelp(true)}>{t('tab.shortcutsButton')}</button>
+  const status = (
+    <>
+      {t('melody.position', { m: cursor.m + 1, b: cursor.b + 1, note: statusNote })}
+      <span className="tab-hint"> · {t('tab.helpHint')}</span>
+    </>
+  )
+  const keypadEl = (
+    <div className="tab-keypad mel-keypad" role="group" aria-label={t('tab.keypad')}>
+      {notation === 'numbered'
+        ? [1, 2, 3, 4, 5, 6, 7].map((d) => <button key={d} onClick={() => enterDegree(d)}>{d}</button>)
+        : LETTERS.map((l) => <button key={l} onClick={() => enterLetter(l.toLowerCase())}>{l}</button>)}
+      <button onClick={clear} aria-label={t('melody.rest')}>{notation === 'numbered' ? '0' : t('melody.restShort')}</button>
+      <button onClick={() => semitone(1)}>♯</button>
+      <button onClick={() => semitone(-1)}>♭</button>
+      <button onClick={() => octave(1)} aria-label={t('melody.octaveUp')}>↑8</button>
+      <button onClick={() => octave(-1)} aria-label={t('melody.octaveDown')}>↓8</button>
+      <button onClick={tie}>{t('tech.tieShort')}</button>
+      <button onClick={() => move(-1)} aria-label="←">←</button>
+      <button onClick={() => move(1)} aria-label="→">→</button>
+      <button onClick={addBeat} aria-label={t('tab.addBeat')}>↵</button>
+    </div>
+  )
+
   return (
     <div className="tab-editor">
-      <div className="tab-toolbar" role="toolbar" aria-label={t('tab.toolbar')}>
-        <div className="segmented" role="group" aria-label={t('tab.duration')}>
-          {DURATIONS.map((d) => (
-            <button key={d} aria-pressed={beat?.duration === d} onClick={() => onChange((c) => setDuration(c, cursor.m, cursor.b, d))}>
-              {DURATION_LABEL[d]}
-            </button>
-          ))}
-        </div>
-        <button className="btn" aria-pressed={!!beat?.dotted} onClick={() => onChange((c) => toggleDot(c, cursor.m, cursor.b))} title={`${t('tab.dot')} (.)`}>{t('tab.dot')}</button>
-        <button className="btn" aria-pressed={!!beat?.tuplet} onClick={() => onChange((c) => cycleTuplet(c, cursor.m, cursor.b))} title={`${t('tech.tuplet')} (U)`}>
-          {t('tech.tupletShort')}{beat?.tuplet ? ` ${beat.tuplet}` : ''}
-        </button>
-        <button className="btn" aria-pressed={!!note?.tie} onClick={tie} title={`${t('tech.tie')} (T)`}>{t('tech.tieShort')}</button>
-        <span className="tab-toolbar-sep" />
-        <button className="btn" onClick={() => semitone(1)} title="♯ (])">♯</button>
-        <button className="btn" onClick={() => semitone(-1)} title="♭ ([)">♭</button>
-        <button className="btn" onClick={() => octave(1)} title={`${t('melody.octaveUp')} (↑)`}>8va</button>
-        <button className="btn" onClick={() => octave(-1)} title={`${t('melody.octaveDown')} (↓)`}>8vb</button>
-        <span className="tab-toolbar-sep" />
-        <button className="btn" onClick={addBeat} title={`${t('tab.addBeat')} (Enter)`}>+ {t('tab.beat')}</button>
-        <button className="btn" onClick={removeBeat}>− {t('tab.beat')}</button>
-        <button className="btn" onClick={() => onChange((c) => clearBeat(c, cursor.m, cursor.b))}>{t('tab.clearBeat')}</button>
-        <button className="btn" onClick={addMeasure}>+ {t('tab.measure')}</button>
-        <button className="btn" onClick={removeMeasure}>− {t('tab.measure')}</button>
-        <select
-          className="select"
-          aria-label={t('tab.measureTs')}
-          title={t('tab.measureTs')}
-          value={content.measures[cursor.m]?.timeSignature?.join('/') ?? ''}
-          onChange={(e) => {
-            const v = e.target.value
-            onChange((c) => setMeasureTs(c, cursor.m, v ? (v.split('/').map(Number) as [number, number]) : null, timeSignature))
-          }}
-        >
-          <option value="">{t('tab.tsInherit', { ts: tsAt({ ...content, measures: content.measures.slice(0, cursor.m) }, cursor.m - 1, timeSignature).join('/') })}</option>
-          {TIME_SIGNATURES.map((x) => <option key={x} value={x}>{t('tab.tsChange', { ts: x })}</option>)}
-        </select>
-        <button className="btn" onClick={() => setChordBeat({ m: cursor.m, b: cursor.b })} title={`${t('chord.title')} (${notation === 'staff' ? '⇧C' : 'C'})`}>
-          {t('chord.button')}{beat?.chord ? `：${beat.chord}` : ''}
-        </button>
-        <button className="btn" onClick={() => setLyricOpen(true)} title={`${t('melody.lyric')} (${notation === 'staff' ? '⇧L' : 'L'})`}>{t('melody.lyric')}</button>
-        <button className="btn" onClick={() => setFitMeasure(cursor.m)} title={`${t('fit.title')} (${notation === 'staff' ? '⇧F' : 'F'})`}>{t('fit.button')}</button>
-        <span className="spacer" />
-        <button className="btn btn-icon" onClick={undo} disabled={!canUndo} aria-label={t('tab.undo')} title={`${t('tab.undo')} (⌘Z)`}><Icon name="undo" /></button>
-        <button className="btn btn-icon" onClick={redo} disabled={!canRedo} aria-label={t('tab.redo')} title={`${t('tab.redo')} (⇧⌘Z)`}><Icon name="redo" /></button>
-        <button className="btn" onClick={() => setTidyOpen(true)} title={t('tidy.title')}>{t('tidy.button')}</button>
-        <button className="btn" onClick={() => setHelp(true)}>{t('tab.shortcutsButton')}</button>
-        <button className="btn" aria-pressed={keypad} onClick={() => setKeypad(!keypad)}>{t('tab.keypad')}</button>
-      </div>
-
-      <SelectionBar sel={sel} />
-
       <div ref={rootRef} className={`tab-sheet mel-sheet ${notation}`} tabIndex={0} onKeyDown={onKeyDown} aria-label={t('melody.editorLabel')}>
         {content.measures.map((measure, m) => {
           const fill = measure.free ? 0 : measureFill(measure, tsAt(content, m, timeSignature))
@@ -338,27 +363,28 @@ export function MelodyEditor(props: Props) {
         })}
       </div>
 
-      <div className="tab-status muted small">
-        {t('melody.position', { m: cursor.m + 1, b: cursor.b + 1, note: statusNote })}
-        <span className="tab-hint"> · {t('tab.helpHint')}</span>
-      </div>
-
-      {keypad && (
-        <div className="tab-keypad mel-keypad" role="group" aria-label={t('tab.keypad')}>
-          {notation === 'numbered'
-            ? [1, 2, 3, 4, 5, 6, 7].map((d) => <button key={d} onClick={() => enterDegree(d)}>{d}</button>)
-            : LETTERS.map((l) => <button key={l} onClick={() => enterLetter(l.toLowerCase())}>{l}</button>)}
-          <button onClick={clear} aria-label={t('melody.rest')}>{notation === 'numbered' ? '0' : t('melody.restShort')}</button>
-          <button onClick={() => semitone(1)}>♯</button>
-          <button onClick={() => semitone(-1)}>♭</button>
-          <button onClick={() => octave(1)} aria-label={t('melody.octaveUp')}>↑8</button>
-          <button onClick={() => octave(-1)} aria-label={t('melody.octaveDown')}>↓8</button>
-          <button onClick={tie}>{t('tech.tieShort')}</button>
-          <button onClick={() => move(-1)} aria-label="←">←</button>
-          <button onClick={() => move(1)} aria-label="→">→</button>
-          <button onClick={addBeat} aria-label={t('tab.addBeat')}>↵</button>
-        </div>
-      )}
+      <ToolDock
+          label={t('dock.tools')}
+          openLabel={t('dock.tools')}
+          status={status}
+          tabs={[
+            { id: 'keys', label: t('dock.keys'), content: keypadEl },
+            { id: 'duration', label: t('dock.duration'), content: <div className="dock-row">{durationGroup}</div> },
+            {
+              id: 'measure',
+              label: t('dock.measure'),
+              content: (
+                <div className="dock-row">
+                  {beatGroup}
+                  {fitButton}
+                  {undoRedo}
+                  <SelectionBar sel={sel} />
+                </div>
+              ),
+            },
+            { id: 'more', label: t('dock.more'), content: <div className="dock-row">{chordButton}{lyricButton}{tidyButton}{helpButton}</div> },
+          ]}
+        />
 
       <Modal open={help} onClose={() => setHelp(false)} title={t('tab.shortcutsTitle')} actions={<button className="btn btn-primary" onClick={() => setHelp(false)}>{t('common.close')}</button>}>
         <table className="shortcut-table">

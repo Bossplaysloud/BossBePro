@@ -3,7 +3,7 @@ const zhTW = {
   nav: { home: '首頁', library: '譜本', settings: '設定', allSheets: '全部的譜', unsorted: '未分類', sections: '分類', songbooks: '歌本', menu: '選單', hideSidebar: '隱藏側邊欄', showSidebar: '顯示側邊欄' },
   common: {
     cancel: '取消', save: '儲存', delete: '刪除', rename: '重新命名', create: '建立', close: '關閉', confirm: '確定',
-    search: '搜尋', back: '返回', edit: '編輯', untitled: '未命名',
+    search: '搜尋', back: '返回', edit: '編輯', untitled: '未命名', more: '更多',
   },
   manage: {
     manage: '管理', done: '完成', selectAll: '全選', deleteSelected: '刪除所選（{{count}}）', hint: '勾選要刪除的分類或歌本',
@@ -97,6 +97,11 @@ const zhTW = {
     shortcutsButton: '快捷鍵', shortcutsTitle: '鍵盤快捷鍵', helpHint: '按 ? 看所有快捷鍵',
     keyboardDetected: '偵測到實體鍵盤，已隱藏螢幕數字鍵盤（可隨時再打開）',
   },
+  dock: {
+    tools: '工具', hide: '收起', keys: '鍵盤', duration: '時值', tech: '技巧', measure: '小節', more: '更多',
+    notes: '筆記', stickies: '便利貼', syntax: '語法說明', placing: '點圖片放便利貼', stickyCount: '已有 {{count}} 張',
+    color: '顏色', size: '字級', toRecognize: '辨識成可編輯的譜', infoImage: '圖片譜 · {{count}} 頁',
+  },
   tech: {
     title: '技巧', needNote: '先在這格輸入一個音', noTieSource: '前一拍同一條弦沒有音可以連結',
     hammer: '搥弦', hammerShort: '搥', pull: '勾弦', pullShort: '勾', slide: '滑音（到下一個音）', slideShort: '滑',
@@ -131,6 +136,7 @@ const zhTW = {
     unfree: '取消自由小節', unfreeDesc: '恢復拍數檢查。', freeBadge: '自由',
   },
   player: {
+    options: '播放設定',
     pin: '固定在頂部', pinHint: '捲動譜面時，播放列一直停在螢幕最上方，隨時可以播放、暫停',
     title: '播放', play: '播放', pause: '暫停', stop: '停止', loading: '載入音色中…', soundMissing: '找不到音色檔，請到設定選擇音色',
     bpm: '拍速 BPM', speed: '播放速度', resetSpeed: '恢復原速 100%', metronome: '節拍器', countIn: '預備拍', countInHint: '開始前先打一小節的拍子',

@@ -54,6 +54,35 @@ function colors(dark: boolean) {
 const PAGE_GAP = 40
 
 /**
+ * Long titles are drawn smaller so they fit the page width instead of running off both sides.
+ * Returns whether the title size changed (the score then needs drawing again).
+ */
+type TitleFont = AlphaTabApi['settings']['display']['resources']['titleFont']
+let baseTitleFont: TitleFont | null = null
+let measureCtx: CanvasRenderingContext2D | null = null
+function fitTitle(api: AlphaTabApi, tex: string, width: number) {
+  const res = api.settings.display.resources
+  baseTitleFont ??= res.titleFont
+  const base = baseTitleFont
+  let size = base.size
+  const m = /\\title\s+"((?:[^"\\]|\\.)*)"/.exec(tex)
+  if (m && width > 0) {
+    measureCtx ??= document.createElement('canvas').getContext('2d')
+    if (measureCtx) {
+      measureCtx.font = base.toCssString(1)
+      const text = measureCtx.measureText(m[1].replace(/\\(.)/g, '$1')).width
+      // The page keeps a margin on both sides; leave a little extra for font differences.
+      const room = width / api.settings.display.scale - 90
+      if (text > room) size = Math.max(14, Math.floor((base.size * room) / text))
+    }
+  }
+  if (res.titleFont.size === size) return false
+  res.titleFont = base.withSize(size)
+  api.updateSettings()
+  return true
+}
+
+/**
  * Two-page layout: alphaTab draws the score as blocks stacked top to bottom (title, then one block
  * per line of music). They are dealt onto pages as tall as the visible area: down the left page,
  * then down the right page, then the next spread below. With no width, nothing is moved.
@@ -109,8 +138,9 @@ export function ScoreView({ tex, visible, profile = 'tab', range, onMeasureClick
   const apiRef = useRef<AlphaTabApi | null>(null)
   const [rendered, setRendered] = useState(false)
   const [boxes, setBoxes] = useState<Box[]>([])
-  const latest = useRef({ range, onMeasureClick, onBeat, onStatus, onMidiReady, visible })
-  latest.current = { range, onMeasureClick, onBeat, onStatus, onMidiReady, visible }
+  const titleWidth = pageWidth ?? wrapWidth
+  const latest = useRef({ range, onMeasureClick, onBeat, onStatus, onMidiReady, visible, titleWidth })
+  latest.current = { range, onMeasureClick, onBeat, onStatus, onMidiReady, visible, titleWidth }
   const status = useRef<PlayerStatus>({ ready: false, playing: false, time: 0, end: 0 })
   const emit = (patch: Partial<PlayerStatus>) => {
     status.current = { ...status.current, ...patch }
@@ -188,6 +218,7 @@ export function ScoreView({ tex, visible, profile = 'tab', range, onMeasureClick
       })
       apiRef.current = api
       onApi(api)
+      fitTitle(api, tex, latest.current.titleWidth)
       api.tex(tex)
 
       if (soundFont !== 'builtin') {
@@ -208,8 +239,19 @@ export function ScoreView({ tex, visible, profile = 'tab', range, onMeasureClick
   }, [twoPage, twoPage ? pageWidth : 0])
 
   useEffect(() => {
-    apiRef.current?.tex(tex)
+    const api = apiRef.current
+    if (!api) return
+    fitTitle(api, tex, titleWidth)
+    api.tex(tex)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tex])
+
+  // The page got wider or narrower (or zoomed): fit a long title again.
+  useEffect(() => {
+    const api = apiRef.current
+    if (api && fitTitle(api, tex, titleWidth)) api.render()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [titleWidth, scale])
 
   useEffect(() => {
     const api = apiRef.current

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { STICKY_COLORS, STICKY_SIZES, type ImageNotes, type Sticky, type StickyColor, type StickySize } from '../music/imageSheet'
-import { useNotesDefault, useNotesOpen, type NotesPlace } from '../lib/settings'
+import { useIsPhone, useNotesDefault, useNotesOpen, type NotesPlace } from '../lib/settings'
 import { Icon } from './Icon'
+import { ToolDock } from './ToolDock'
 
 const FIELD: Record<NotesPlace, 'inPdf' | 'inSongbook' | 'searchable'> = { pdf: 'inPdf', songbook: 'inSongbook', search: 'searchable' }
 const PLACES: NotesPlace[] = ['pdf', 'songbook', 'search']
@@ -177,6 +178,8 @@ export function ImageNotesPanel({ notes, onChange, placing, onPlacing, style, on
 }) {
   const { t } = useTranslation()
   const [open, setOpen] = useNotesOpen()
+  const phone = useIsPhone()
+  const [tab, setTab] = useState<string | null>(null)
   const [text, setText] = useState(notes.text)
   const typing = useRef(false)
   const shown = { pdf: useNotesShown(notes, 'pdf'), songbook: useNotesShown(notes, 'songbook'), search: useNotesShown(notes, 'search') }
@@ -201,6 +204,93 @@ export function ImageNotesPanel({ notes, onChange, placing, onPlacing, style, on
 
   const summary = [notes.text.trim() && t('notes.hasText'), notes.stickies.length > 0 && t('notes.stickies', { count: notes.stickies.length })].filter(Boolean).join(' · ')
 
+  const textArea = (
+    <textarea
+      className="input notes-text"
+      rows={5}
+      placeholder={t('notes.placeholder')}
+      value={text}
+      onChange={(e) => {
+        typing.current = true
+        setText(e.target.value)
+      }}
+      onBlur={() => {
+        typing.current = false
+        if (text !== notes.text) onChange({ text })
+      }}
+    />
+  )
+  const addSticky = (
+    <button className={`btn${placing ? ' btn-primary' : ''}`} aria-pressed={placing} onClick={() => onPlacing(!placing)}>
+      <Icon name="plus" />
+      {placing ? t('notes.placingCancel') : t('notes.addSticky')}
+    </button>
+  )
+  const colors = (
+    <span className="row" style={{ gap: 4 }} role="group" aria-label={t('notes.colorLabel')}>
+      {STICKY_COLORS.map((c) => (
+        <button key={c} type="button" className={`sticky-dot sticky-${c}`} aria-pressed={style.color === c} aria-label={t(`notes.color.${c}`)} title={t(`notes.color.${c}`)} onClick={() => onStyle({ color: c })} />
+      ))}
+    </span>
+  )
+  const sizes = (
+    <div className="segmented" role="group" aria-label={t('notes.sizeLabel')}>
+      {STICKY_SIZES.map((z) => (
+        <button key={z} aria-pressed={style.size === z} onClick={() => onStyle({ size: z })}>{t(`notes.size.${z}`)}</button>
+      ))}
+    </div>
+  )
+  const showIn = (
+    <div className="row small notes-show">
+      <span className="muted">{t('notes.showIn')}</span>
+      {PLACES.map((p) => (
+        <label key={p} className="row" style={{ gap: 4 }}>
+          <input type="checkbox" checked={shown[p]} onChange={(e) => onChange({ [FIELD[p]]: e.target.checked })} />
+          {t(`notes.place.${p}`)}
+        </label>
+      ))}
+    </div>
+  )
+
+  // Phones: the notes live in a panel at the bottom (notes / stickies); placing a sticky folds it away.
+  if (phone) {
+    if (placing)
+      return (
+        <div className="placing-bar" role="status">
+          <span>{t('dock.placing')}</span>
+          <button className="btn" onClick={() => onPlacing(false)}>{t('common.cancel')}</button>
+        </div>
+      )
+    return (
+      <ToolDock
+        label={t('notes.title')}
+        openLabel={t('notes.title')}
+        badge={notes.stickies.length ? String(notes.stickies.length) : undefined}
+        open={open}
+        onOpen={setOpen}
+        status={summary}
+        tabState={[tab, setTab]}
+        tabs={[
+          { id: 'notes', label: t('dock.notes'), content: <div className="dock-stack">{textArea}{showIn}</div> },
+          {
+            id: 'stickies',
+            label: t('dock.stickies'),
+            content: (
+              <div className="dock-stack">
+                <div className="row"><span className="muted small">{t('dock.color')}</span>{colors}</div>
+                <div className="row"><span className="muted small">{t('dock.size')}</span>{sizes}</div>
+                <div className="row">
+                  {addSticky}
+                  {notes.stickies.length > 0 && <span className="muted small">{t('dock.stickyCount', { count: notes.stickies.length })}</span>}
+                </div>
+              </div>
+            ),
+          },
+        ]}
+      />
+    )
+  }
+
   return (
     <details className="notes-panel" open={open} onToggle={(e) => e.currentTarget.open !== open && setOpen(e.currentTarget.open)}>
       <summary>
@@ -209,46 +299,14 @@ export function ImageNotesPanel({ notes, onChange, placing, onPlacing, style, on
         {summary && <span className="muted small">{summary}</span>}
       </summary>
       <div className="stack" style={{ gap: 10, marginTop: 10 }}>
-        <textarea
-          className="input notes-text"
-          rows={5}
-          placeholder={t('notes.placeholder')}
-          value={text}
-          onChange={(e) => {
-            typing.current = true
-            setText(e.target.value)
-          }}
-          onBlur={() => {
-            typing.current = false
-            if (text !== notes.text) onChange({ text })
-          }}
-        />
+        {textArea}
         <div className="row notes-sticky-row">
-          <button className={`btn${placing ? ' btn-primary' : ''}`} aria-pressed={placing} onClick={() => onPlacing(!placing)}>
-            <Icon name="plus" />
-            {placing ? t('notes.placingCancel') : t('notes.addSticky')}
-          </button>
-          <span className="row" style={{ gap: 4 }} role="group" aria-label={t('notes.colorLabel')}>
-            {STICKY_COLORS.map((c) => (
-              <button key={c} type="button" className={`sticky-dot sticky-${c}`} aria-pressed={style.color === c} aria-label={t(`notes.color.${c}`)} title={t(`notes.color.${c}`)} onClick={() => onStyle({ color: c })} />
-            ))}
-          </span>
-          <div className="segmented" role="group" aria-label={t('notes.sizeLabel')}>
-            {STICKY_SIZES.map((z) => (
-              <button key={z} aria-pressed={style.size === z} onClick={() => onStyle({ size: z })}>{t(`notes.size.${z}`)}</button>
-            ))}
-          </div>
+          {addSticky}
+          {colors}
+          {sizes}
         </div>
         {placing && <p className="muted small" style={{ margin: 0 }}>{t('notes.placingHint')}</p>}
-        <div className="row small notes-show">
-          <span className="muted">{t('notes.showIn')}</span>
-          {PLACES.map((p) => (
-            <label key={p} className="row" style={{ gap: 4 }}>
-              <input type="checkbox" checked={shown[p]} onChange={(e) => onChange({ [FIELD[p]]: e.target.checked })} />
-              {t(`notes.place.${p}`)}
-            </label>
-          ))}
-        </div>
+        {showIn}
         <p className="muted small" style={{ margin: 0 }}>{t('notes.defaultsHint')}</p>
       </div>
     </details>

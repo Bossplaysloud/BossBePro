@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import type { InstrumentId } from '../music/instruments'
+import { randomId } from '../lib/uuid'
 
 /** 'image': the sheet is just pictures or a PDF, for reading only (no editing or recognition). */
 export type SheetType = 'tab' | 'staff' | 'chord' | 'numbered' | 'image'
@@ -119,7 +120,7 @@ export const db = new BeProDB()
 export const DATA_TABLES = ['sections', 'sheets', 'tunings', 'assets', 'songbooks'] as const
 export type DataTable = (typeof DATA_TABLES)[number]
 
-export const newId = () => crypto.randomUUID()
+export const newId = () => randomId()
 
 export async function getMeta<T>(key: string, database: BeProDB = db): Promise<T | undefined> {
   return (await database.meta.get(key))?.value as T | undefined
